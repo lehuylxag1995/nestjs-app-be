@@ -1,0 +1,26 @@
+enum Role {
+    ADMIN
+    STAFF
+    CUSTOMER
+}
+
+model User {
+    id       String  @id @default(uuid())
+    name     String  @unique
+    email    String  @unique
+    phone    String
+    password String
+    address  String
+    CCCD     String?
+    role     Role    @default(CUSTOMER)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //Khách vãng lai
+    Order Order[]
+
+    //Nhân viên 
+
+    InventoryTransaction InventoryTransaction[]
+}

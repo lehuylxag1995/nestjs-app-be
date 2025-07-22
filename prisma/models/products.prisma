@@ -1,0 +1,19 @@
+model Product {
+    id          String  @id @default(uuid())
+    name        String
+    description String
+    price       Decimal @db.Decimal(13, 3)
+    priceSale   Decimal @db.Decimal(13, 3)
+    brand       String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    categoryId           String
+    category             Category               @relation(fields: [categoryId], references: [id])
+    images               ProductImage[]
+    orderItem            OrderItem[]
+    inventories          Inventory[]
+    variants             ProductVariant[]
+    InventoryTransaction InventoryTransaction[]
+}

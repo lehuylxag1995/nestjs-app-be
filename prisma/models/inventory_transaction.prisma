@@ -1,0 +1,26 @@
+enum TransactionType {
+    IMPORT // Nhập kho
+    EXPORT // Xuất bán
+    RETURN // Trả lại hàng vào kho
+    ADJUSTMENT // Điều chỉnh thủ công (ví dụ kiểm kê lệch)
+}
+
+//Ghi nhận các hoạt động nhập/xuất
+model InventoryTransaction {
+    id        String          @id @default(uuid())
+    type      TransactionType // IMPORT, EXPORT, RETURN, ADJUSTMENT
+    quantity  BigInt // số lượng + (nhập) hoặc - (xuất)
+    note      String?
+    createdAt DateTime        @default(now())
+    updatedAt DateTime        @updatedAt
+
+    //Nhập/Xuất gồm sản phẩm và chi tiết sản phẩm
+    productId String?
+    product   Product?        @relation(fields: [productId], references: [id])
+    variantId String?
+    variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+    //Thông tin người nhập
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+}

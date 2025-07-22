@@ -1,0 +1,32 @@
+enum OrderStatus {
+    PENDING // Chờ xác nhận
+    DELIVERED // Vận chuyển
+    SHIPPED // Đã giao
+    CANCELLED // Hủy đơn
+    PAID // Trả hàng
+}
+
+model Order {
+    id     String      @id @default(uuid())
+    status OrderStatus @default(PENDING)
+    total  Decimal     @db.Decimal(13, 3)
+    items  OrderItem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //Bắt buộc đăng ký để đặt hàng
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+    id        String  @id @default(uuid())
+    order     Order   @relation(fields: [orderId], references: [id])
+    orderId   String
+    product   Product @relation(fields: [productId], references: [id])
+    productId String
+    quantity  Int
+    price     Decimal @db.Decimal(13, 3)
+    total     Decimal @db.Decimal(13, 3)
+}
