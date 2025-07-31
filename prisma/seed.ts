@@ -1,6 +1,7 @@
 import { fakerVI } from '@faker-js/faker';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+
 const prisma = new PrismaClient();
 
 async function createUsers(count: number) {
@@ -45,11 +46,98 @@ async function createCategories(
   }
 }
 
+async function createProductForLeafCategories(min = 2, max = 5) {
+  //lấy tất cả các category
+  const allCategories = await prisma.category.findMany({
+    include: {
+      children: true,
+    },
+  });
+
+  //Lọc ra các category không có con ( leaf )
+  const leafCategories = allCategories.filter(
+    (category) => category.children.length === 0,
+  );
+
+  //Duyệt qua danh sách
+  for (const category of leafCategories) {
+    //Random số lần tạo sản phẩm
+    const numberProducts = fakerVI.number.int({ min, max });
+
+    const products: Prisma.ProductCreateManyInput[] = Array.from({
+      length: numberProducts,
+    }).map(() => ({
+      name: fakerVI.commerce.productName(),
+      description: fakerVI.commerce.productDescription(),
+      price: fakerVI.commerce.price({ min: 100, max: 1000, dec: 3 }),
+      categoryId: category.id,
+      priceSale: 0,
+      brand: fakerVI.company.name(),
+    }));
+
+    await prisma.product.createMany({
+      data: products,
+    });
+
+    // console.log(
+    //   `🛒 Tạo ${numberProducts} sản phẩm cho category "${category.name}"`,
+    // );
+  }
+}
+
+async function createProductImageForProducts(min = 3, max = 5) {
+  const allProducts = await prisma.product.findMany();
+
+  for (const product of allProducts) {
+    const numImages = fakerVI.number.int({ min, max });
+
+    const productImages: Prisma.ProductImageCreateManyInput[] = Array.from({
+      length: numImages,
+    }).map(() => ({
+      url: fakerVI.image.urlPicsumPhotos({ width: 340, height: 340 }),
+      productId: product.id,
+    }));
+
+    await prisma.productImage.createMany({
+      data: productImages,
+    });
+
+    // console.log(`Tạo ${numImages} hình ảnh của sản phẩm ${product.name}`);
+  }
+}
+
+async function createProductVariantForProducts(min = 1, max = 4) {
+  const allProduct = await prisma.product.findMany();
+
+  for (const product of allProduct) {
+    const numImages = fakerVI.number.int({ min, max });
+
+    const productVariants: Prisma.ProductVariantCreateManyInput[] = Array.from({
+      length: numImages,
+    }).map(() => ({
+      productId: product.id,
+      size: fakerVI.string.fromCharacters(['M', 'XL', 'XXL', 'XXXL']),
+      sku: fakerVI.string.alpha({ length: { min: 5, max: 10 } }), // 'HcVrCf'
+      color: fakerVI.color.human(),
+    }));
+
+    await prisma.productVariant.createMany({
+      data: productVariants,
+    });
+  }
+}
+
 async function main() {
   await createUsers(10);
   console.log('✅ Seed User');
   await createCategories(3, 3); //cây tối đa 3 tầng, mỗi node có tối đa 3 con
   console.log('✅ Seed Categories');
+  await createProductForLeafCategories();
+  console.log('✅ Seed Products');
+  await createProductImageForProducts();
+  console.log('✅ Seed Products Image');
+  await createProductVariantForProducts();
+  console.log('✅ Seed Products Variants');
 }
 
 main()
