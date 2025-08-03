@@ -1,9 +1,13 @@
 model Category {
-    id       String  @id @default(uuid())
-    name     String
-    parentId String?
+    id        String  @id @default(uuid())
+    name      String  @unique
+    parentId  String?
+    published Boolean @default(true)
 
-    parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id], onDelete: SetNull)
     children Category[] @relation("CategoryToParent")
     Product  Product[]
 }
