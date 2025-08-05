@@ -37,7 +37,7 @@ async function createCategories(
   for (let index = 0; index < numChildren; index++) {
     const category = await prisma.category.create({
       data: {
-        name: fakerVI.commerce.department() + ' ' + fakerVI.word.adjective(),
+        name: `${fakerVI.commerce.department()} ${fakerVI.color.human()}`,
         parentId: parentId,
       },
     });
@@ -85,27 +85,6 @@ async function createProductForLeafCategories(min = 2, max = 5) {
   }
 }
 
-async function createProductImageForProducts(min = 3, max = 5) {
-  const allProducts = await prisma.product.findMany();
-
-  for (const product of allProducts) {
-    const numImages = fakerVI.number.int({ min, max });
-
-    const productImages: Prisma.ProductImageCreateManyInput[] = Array.from({
-      length: numImages,
-    }).map(() => ({
-      url: fakerVI.image.urlPicsumPhotos({ width: 340, height: 340 }),
-      productId: product.id,
-    }));
-
-    await prisma.productImage.createMany({
-      data: productImages,
-    });
-
-    // console.log(`Tạo ${numImages} hình ảnh của sản phẩm ${product.name}`);
-  }
-}
-
 async function createProductVariantForProducts(min = 1, max = 4) {
   const allProduct = await prisma.product.findMany();
 
@@ -127,6 +106,33 @@ async function createProductVariantForProducts(min = 1, max = 4) {
   }
 }
 
+async function createProductImageForProducts(min = 3, max = 5) {
+  const allProducts = await prisma.product.findMany();
+
+  for (const product of allProducts) {
+    const numImages = fakerVI.number.int({ min, max });
+
+    const images: Prisma.ImageCreateManyInput[] = Array.from({
+      length: numImages,
+    }).map(() => {
+      const uuid = fakerVI.string.uuid();
+      const filename = `${uuid}.jpg`;
+      return {
+        originalName: fakerVI.system.commonFileName('jpg'),
+        filename: filename,
+        path: `https://picsum.photos/seed/${uuid}/500/500`,
+        mimetype: 'image/jpeg',
+        size: fakerVI.number.int({ min: 1000, max: 20000 }),
+        productId: product.id,
+      };
+    });
+
+    await prisma.image.createMany({
+      data: images,
+    });
+  }
+}
+
 async function main() {
   await createUsers(10);
   console.log('✅ Seed User');
@@ -134,10 +140,10 @@ async function main() {
   console.log('✅ Seed Categories');
   await createProductForLeafCategories();
   console.log('✅ Seed Products');
-  await createProductImageForProducts();
-  console.log('✅ Seed Products Image');
   await createProductVariantForProducts();
   console.log('✅ Seed Products Variants');
+  await createProductImageForProducts();
+  console.log('✅ Seed Products Image');
 }
 
 main()

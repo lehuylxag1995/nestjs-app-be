@@ -1,0 +1,23 @@
+model File {
+    id           String  @id @default(uuid())
+    originalName String // Tên ảnh gốc khi upload
+    filename     String  @unique //	Tên file được lưu trên server, đảm bảo duy nhấ
+    mimetype     String // Kiểu MIME của file
+    path         String // Link truy cập file (local hoặc cloud)
+    size         Int // Dung lượng tính bằng byte
+    extension    String //jpg, png, pdf, zip...
+    subtype      String // 'invoice' | 'report' | 'manual' | ...
+    published    Boolean @default(true)
+
+    //ID của bản ghi liên kết (nếu có)
+    userId String?
+    user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //Giúp việc truy vấn ảnh theo product/user/subtype nhanh hơn đáng kể
+    @@index([userId])
+    @@index([subtype])
+    @@map("Files")
+}

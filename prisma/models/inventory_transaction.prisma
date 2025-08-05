@@ -23,4 +23,6 @@ model InventoryTransaction {
     //Thông tin người nhập
     userId String
     user   User   @relation(fields: [userId], references: [id])
+
+    @@map("InventoryTransactions")
 }

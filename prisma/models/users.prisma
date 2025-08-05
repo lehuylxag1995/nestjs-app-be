@@ -21,6 +21,9 @@ model User {
     Order Order[]
 
     //Nhân viên 
+    InventoryTransactions InventoryTransaction[]
+    Images                Image[]
+    Files                 File[]
 
-    InventoryTransaction InventoryTransaction[]
+    @@map("Users")
 }

@@ -18,6 +18,8 @@ model Order {
     //Bắt buộc đăng ký để đặt hàng
     userId String
     user   User   @relation(fields: [userId], references: [id])
+
+    @@map("Orders")
 }
 
 model OrderItem {
@@ -29,4 +31,6 @@ model OrderItem {
     quantity  Int
     price     Decimal @db.Decimal(13, 3)
     total     Decimal @db.Decimal(13, 3)
+
+    @@map("OrderItems")
 }

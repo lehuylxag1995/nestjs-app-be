@@ -8,8 +8,10 @@ model ProductVariant {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    productId            String?
-    product              Product?               @relation(fields: [productId], references: [id], onDelete: SetNull)
-    Inventory            Inventory?
-    InventoryTransaction InventoryTransaction[]
+    productId             String?
+    product               Product?               @relation(fields: [productId], references: [id], onDelete: SetNull)
+    Inventory             Inventory?
+    InventoryTransactions InventoryTransaction[]
+
+    @@map("Variants")
 }
