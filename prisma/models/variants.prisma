@@ -2,14 +2,15 @@ model ProductVariant {
     id        String  @id @default(uuid())
     sku       String  @unique // mã định danh từng biến thể (SPO01-XXL-RED)
     size      String
-    color     String?
+    color     String
     published Boolean @default(true)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
+    //Biến thể thuộc duy nhất 1 sản phẩm, nên khi xóa sản phẩm thì biến thể phụ thuộc sẽ bị xóa theo
     productId             String?
-    product               Product?               @relation(fields: [productId], references: [id], onDelete: SetNull)
+    product               Product?               @relation(fields: [productId], references: [id], onDelete: Cascade)
     Inventory             Inventory?
     InventoryTransactions InventoryTransaction[]
 

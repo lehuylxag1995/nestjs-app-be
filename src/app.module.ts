@@ -6,8 +6,16 @@ import { AppService } from './app.service';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 
+import { ProductVariantsModule } from './modules/product-variants/product-variants.module';
+
 @Module({
-  imports: [PrismaModule, CategoriesModule, ProductsModule, ImagesModule],
+  imports: [
+    PrismaModule,
+    CategoriesModule,
+    ProductsModule,
+    ImagesModule,
+    ProductVariantsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
