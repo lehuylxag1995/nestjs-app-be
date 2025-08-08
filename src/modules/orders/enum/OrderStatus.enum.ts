@@ -1,7 +1,8 @@
 export enum OrderStatus {
   PENDING = 'PENDING', // Chờ xác nhận
+  CONFIRMED = 'CONFIRMED', // Xác nhận đơn
   DELIVERED = 'DELIVERED', // Vận chuyển
   SHIPPED = 'SHIPPED', // Đã giao
   CANCELLED = 'CANCELLED', // Hủy đơn
-  PAID = 'PAID', // Trả
+  RETURNED = 'RETURNED', // Nhận hàng trả
 }

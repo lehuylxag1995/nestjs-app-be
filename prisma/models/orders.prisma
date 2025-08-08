@@ -1,9 +1,39 @@
 enum OrderStatus {
-    PENDING // Chờ xác nhận
-    DELIVERED // Vận chuyển
-    SHIPPED // Đã giao
-    CANCELLED // Hủy đơn
-    PAID // Trả hàng
+    //  1. Khi khách đặt hàng (CREATE)
+    // Trạng thái: PENDING (hoặc NEW, UNCONFIRMED)
+    // Lý do: Mới tạo, chưa được xác nhận hay xử lý.
+    PENDING
+
+    // 2. Khi shop xác nhận đơn
+    // Trạng thái: CONFIRMED / PROCESSING
+    // Xảy ra khi: Shop kiểm tra hàng, xác nhận thông tin khách, chốt đơn.
+    // Có thể kèm logic:
+    // Giữ hàng trong kho (reduce stock).
+    // Gửi email/sms xác nhận.
+    CONFIRMED
+
+    // 3. Khi bắt đầu giao hàng
+    // Trạng thái: SHIPPED
+    // Xảy ra khi: Đơn đã được bàn giao cho đơn vị vận chuyển.
+    // Có thể lưu tracking number từ đối tác giao hàng.
+    SHIPPED
+
+    // 4. Khi giao thành công
+    // Trạng thái: DELIVERED
+    // Xảy ra khi: Khách nhận hàng và ký nhận.
+    // Nếu là COD: cập nhật thêm trạng thái thanh toán PAID.
+    DELIVERED
+
+    //5. Khi hủy đơn
+    // Trạng thái: CANCELLED
+    // Lý do: Khách yêu cầu hủy, shop hết hàng, hoặc thanh toán thất bại.
+    // Nếu đã trừ kho, cần trả lại số lượng.
+    CANCELLED
+
+    // 6. Khi hoàn hàng
+    // Trạng thái: RETURNED hoặc REFUNDED
+    // Xảy ra khi khách trả lại hàng sau khi nhận.
+    RETURNED
 }
 
 model Order {

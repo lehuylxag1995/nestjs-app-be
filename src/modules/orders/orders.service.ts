@@ -1,5 +1,7 @@
 import { CreateOrderItemDto } from '@modules/orders/dto/create-order-item.dto';
 import { UpdateOrderItemDto } from '@modules/orders/dto/update-order-item.dto';
+import { UpdateOrderDto } from '@modules/orders/dto/update-order.dto';
+import { OrderStatus } from '@modules/orders/enum/OrderStatus.enum';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -192,6 +194,29 @@ export class OrdersService {
       omit: {
         updatedAt: true,
       },
+    });
+  }
+
+  //Thay đổi trạng thái đơn hàng
+  async changeStatusOrderById(id: string, dto: UpdateOrderDto) {
+    const order = await this.findOne(id);
+
+    //Luồng giao hàng
+    const validTransitions: Record<OrderStatus, OrderStatus[]> = {
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED], // Chờ shop online xác nhận, nếu chưa xác nhận khách hàng có thể hủy đơn
+      [OrderStatus.CONFIRMED]: [OrderStatus.SHIPPED], // Shop kiểm tra có hàng giao cho vận chuyển
+      [OrderStatus.SHIPPED]: [OrderStatus.RETURNED, OrderStatus.DELIVERED], // Tới tay khách hàng có thể hoàn trả hoặc nhận hàng luôn
+      [OrderStatus.CANCELLED]: [], // Giao hàng thất bại
+      [OrderStatus.DELIVERED]: [], // Giao hàng thành công
+      [OrderStatus.RETURNED]: [], // Shop nhận trả hàng
+    };
+
+    if (!validTransitions[order.status].includes(dto.status))
+      throw new BadRequestException('Trạng thái đơn hàng không hợp lệ');
+
+    return await this.prismaService.order.update({
+      where: { id },
+      data: { status: dto.status },
     });
   }
 }

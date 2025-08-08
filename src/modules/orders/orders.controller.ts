@@ -1,5 +1,6 @@
 import { CreateOrderItemDto } from '@modules/orders/dto/create-order-item.dto';
 import { UpdateOrderItemDto } from '@modules/orders/dto/update-order-item.dto';
+import { UpdateOrderDto } from '@modules/orders/dto/update-order.dto';
 import {
   Body,
   Controller,
@@ -75,5 +76,13 @@ export class OrdersController {
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return await this.ordersService.findOne(id);
+  }
+
+  @Patch(':id/status')
+  async changeStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOrderDto,
+  ) {
+    return await this.ordersService.changeStatusOrderById(id, dto);
   }
 }
