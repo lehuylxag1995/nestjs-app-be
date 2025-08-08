@@ -4,9 +4,9 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriesModule } from './modules/categories/categories.module';
-import { ProductsModule } from './modules/products/products.module';
-
+import { OrdersModule } from './modules/orders/orders.module';
 import { ProductVariantsModule } from './modules/product-variants/product-variants.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -15,6 +15,7 @@ import { ProductVariantsModule } from './modules/product-variants/product-varian
     ProductsModule,
     ImagesModule,
     ProductVariantsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

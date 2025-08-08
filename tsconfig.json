@@ -12,7 +12,8 @@
     "baseUrl": "./",
     "paths": {
       "@modules/*": ["src/modules/*"],
-      "@pipes/*": ["src/pipes/*"]
+      "@pipes/*": ["src/pipes/*"],
+      "@types/*": ["src/types/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
