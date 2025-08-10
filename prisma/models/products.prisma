@@ -2,9 +2,9 @@ model Product {
     id               String    @id @default(uuid())
     name             String    @unique
     description      String?
-    listedPrice      Decimal   @db.Decimal(13, 3) //Giá niêm yết trước mọi khuyến mãi
-    promotionalPrice Decimal?  @db.Decimal(13, 3) //Giá khuyến mãi (áp dụng toàn shop, toàn bộ danh mục) (ví dụ: "giá khuyến mãi mùa hè"). 
-    salePrice        Decimal?  @db.Decimal(13, 3) //Giá khuyến mãi (một sản phẩm) (ví dụ: "trong ngày hôm nay")
+    listedPrice      Decimal   @default(0) @db.Decimal(13, 3) //Giá niêm yết trước mọi khuyến mãi
+    promotionalPrice Decimal?  @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (áp dụng toàn shop, toàn bộ danh mục) (ví dụ: "giá khuyến mãi mùa hè"). 
+    salePrice        Decimal?  @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (một sản phẩm) (ví dụ: "trong ngày hôm nay")
     brand            String?
     categoryId       String?
     published        Boolean   @default(true)
