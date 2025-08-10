@@ -1,0 +1,62 @@
+enum PurcharsOrderStatus {
+    DRAFT // Tạo chưa gửi nhà cung cấp
+    SENT // Gửi cho nhà cung cấp rồi
+    PARTIALLY_RECEIVED // Shop nhận một phần còn một phần
+    RECEIVED // Shop nhận đủ hàng từ nhà cung cấp
+    CANCELED // Shop hủy đơn đặt hàng từ nhà cung cấp
+}
+
+//Đơn đặt hàng với nhà cung cấp
+model PurcharsOrder {
+    id                   String              @id @default(uuid())
+    supplierId           String
+    createdById          String // Người tạo đơn
+    receivedById         String? // Người nhận hàng
+    orderDate            DateTime // Ngày đặt hàng
+    expectedDeliveryDate DateTime? // Ngày giao hàng dự kiến
+    status               PurcharsOrderStatus @default(DRAFT) //Trạng thái đơn hàng
+    total                Decimal?            @default(0) @db.Decimal(13, 3) //Tính toán từ PurcharsOrderItem
+    note                 String? // Ghi chú đơn đặt hàng với nhà cung cấp
+    createdAt            DateTime            @default(now())
+    updatedAt            DateTime            @updatedAt
+
+    supplier           Supplier            @relation(fields: [supplierId], references: [id])
+    createdBy          User                @relation("PO_CreatedBy", fields: [createdById], references: [id])
+    receivedBy         User?               @relation("PO_ReceivedBy", fields: [receivedById], references: [id])
+    PurcharsOrderItems PurcharsOrderItem[]
+
+    @@index([supplierId, createdById])
+    @@map("PurcharsOrders")
+}
+
+model PurcharsOrderItem {
+    id               String  @id @default(uuid())
+    purcharsOrderId  String
+    productId        String
+    variantId        String
+    quantity         BigInt // Số lượng yêu cầu 
+    receivedQuantity BigInt // Số lượng thực nhận
+    unitCost         Decimal @db.Decimal(13, 3) // Giá từ nhà cung cấp (giá mua)
+    taxRate          Decimal @db.Decimal(5, 2) // Thuế bao nhiêu phần trăm
+    totalCost        Decimal @db.Decimal(13, 3) // Thành tiền
+
+    purcharOrder PurcharsOrder  @relation(fields: [purcharsOrderId], references: [id])
+    product      Product        @relation(fields: [productId], references: [id])
+    variant      ProductVariant @relation(fields: [variantId], references: [id])
+
+    @@map("PurchaseOrderItems")
+}
+
+// Tạo PurchaseOrder → status = DRAFT
+// Gửi PO cho nhà cung cấp → status = SENT
+// Nhận một phần hoặc toàn bộ hàng:
+// Cập nhật receivedQuantity trong PurchaseOrderItem
+// Tạo InventoryTransaction type = IMPORT
+// Nếu nhận đủ → status = RECEIVED
+// Nếu chưa đủ → status = PARTIALLY_RECEIVEDTạo PurchaseOrder → status = DRAFT
+// Gửi PO cho nhà cung cấp → status = SENT
+// Nhận một phần hoặc toàn bộ hàng:
+// Cập nhật receivedQuantity trong PurchaseOrderItem
+// Tạo InventoryTransaction type = IMPORT
+// Nếu nhận đủ → status = RECEIVED
+// Nếu chưa đủ → status = PARTIALLY_RECEIVED

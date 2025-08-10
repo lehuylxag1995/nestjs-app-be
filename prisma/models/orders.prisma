@@ -10,12 +10,14 @@ enum OrderStatus {
     // Có thể kèm logic:
     // Giữ hàng trong kho (reduce stock).
     // Gửi email/sms xác nhận.
+    // InventoryTransaction : Type = RESERVE
     CONFIRMED
 
     // 3. Khi bắt đầu giao hàng
     // Trạng thái: SHIPPED
     // Xảy ra khi: Đơn đã được bàn giao cho đơn vị vận chuyển.
     // Có thể lưu tracking number từ đối tác giao hàng.
+    // InventoryTransaction : Type = EXPORT
     SHIPPED
 
     // 4. Khi giao thành công
@@ -28,40 +30,44 @@ enum OrderStatus {
     // Trạng thái: CANCELLED
     // Lý do: Khách yêu cầu hủy, shop hết hàng, hoặc thanh toán thất bại.
     // Nếu đã trừ kho, cần trả lại số lượng.
+    // InventoryTransaction: Nếu Type = EXPORT -> type = RETURN, 
+    //                       Nếu Type = RESERVE -> type = RELEASE
     CANCELLED
 
     // 6. Khi hoàn hàng
     // Trạng thái: RETURNED hoặc REFUNDED
     // Xảy ra khi khách trả lại hàng sau khi nhận.
+    // InventoryTransaction: Type = RETURN
     RETURNED
 }
 
 model Order {
-    id     String      @id @default(uuid())
-    status OrderStatus @default(PENDING)
-    total  Decimal     @db.Decimal(13, 3)
-    userId String?
+    id        String      @id @default(uuid())
+    status    OrderStatus @default(PENDING)
+    total     Decimal     @default(0) @db.Decimal(13, 3) // Tổng bill đơn hàng
+    userId    String // Thông tin khách hàng
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    //Bắt buộc đăng ký để đặt hàng
-    user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-    items OrderItem[]
+    user                  User                   @relation(fields: [userId], references: [id])
+    items                 OrderItem[]
+    inventoryTransactions InventoryTransaction[]
 
     @@map("Orders")
 }
 
 model OrderItem {
-    id        String  @id @default(uuid())
-    quantity  Int
-    price     Decimal @db.Decimal(13, 3)
-    total     Decimal @db.Decimal(13, 3)
-    orderId   String
-    productId String?
+    id               String  @id @default(uuid())
+    orderId          String
+    productId        String
+    quantity         Int
+    listedPrice      Decimal @db.Decimal(13, 3) //Giá niêm yết (giá bán gồm khuyến mãi)
+    totalListedPrice Decimal @db.Decimal(13, 3) //Thành tiền giá bán
+    costPrice        Decimal @db.Decimal(13, 3) //Giá vốn tại thời điểm bán
+    totalCostPrice   Decimal @db.Decimal(13, 3) //Thành tiền giá vốn
 
-    order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-    product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+    order   Order   @relation(fields: [orderId], references: [id])
+    product Product @relation(fields: [productId], references: [id])
 
     @@map("OrderItems")
 }

@@ -1,0 +1,42 @@
+// Snapshot phục vụ cho thông tin sản phẩm, nhập hàng, bán hàng
+enum SnapshotType {
+    IMPORT //(nhập kho)
+    EXPORT //(xuất kho/bán)
+    ADJUSTMENT //(kiểm kê, điều chỉnh)
+    DAILY //(kết thúc ngày)
+}
+
+model Snapshot {
+    // 1. Thông tin định danh
+    id               String  @id @default(uuid())
+    //Sản phẩm
+    productId        String
+    productName      String
+    listedPrice      Decimal @default(0) @db.Decimal(13, 3) //Giá niêm yết
+    promotionalPrice Decimal @default(0) @db.Decimal(13, 3) //Giá khuyến mãi chung
+    salePrice        Decimal @default(0) @db.Decimal(13, 3) //Giá khuyến mãi riêng
+    brand            String?
+    categoryId       String?
+    //Biến thể
+    variantId        String
+    sku              String
+    size             String
+    color            String
+
+    //2. Số liệu tồn kho tại thời điểm nhập hàng 
+    quantityOnHand    BigInt // → số lượng thực có trong kho
+    quantityReserved  BigInt //→ số lượng đã được giữ cho đơn hàng nhưng chưa xuất
+    quantityAvailable BigInt //→ số lượng có thể bán (OnHand - Reserved)
+    averageCostPrice  Decimal? @db.Decimal(13, 3)
+
+    //3. Số liệu của đơn hàng tại thời điểm bán hàng
+    costPrice       Decimal? @db.Decimal(13, 3) // Giá vốn tại thời điểm đó, để sau này tính lời/lỗ chính xác, vì giá vốn có thể thay đổi theo thời gian.
+    discountedPrice Decimal? @db.Decimal(13, 3) // Giá bán sau khi áp dụng tất cả khuyến mãi
+    totalPrice      Decimal  @db.Decimal(13, 3) //Tổng bill khi bán
+
+    createdById String
+    createdAt   DateTime @default(now())
+
+    product   Product @relation(fields: [productId], references: [id])
+    createdBy User    @relation(fields: [createdById], references: [id])
+}

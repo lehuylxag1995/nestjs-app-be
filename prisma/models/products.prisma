@@ -1,15 +1,16 @@
 model Product {
-    id          String   @id @default(uuid())
-    name        String   @unique
-    description String?
-    price       Decimal  @db.Decimal(13, 3)
-    priceSale   Decimal? @db.Decimal(13, 3)
-    brand       String?
-    categoryId  String?
-    published   Boolean  @default(true)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id               String    @id @default(uuid())
+    name             String    @unique
+    description      String?
+    listedPrice      Decimal   @db.Decimal(13, 3) //Giá niêm yết trước mọi khuyến mãi
+    promotionalPrice Decimal?  @db.Decimal(13, 3) //Giá khuyến mãi (áp dụng toàn shop, toàn bộ danh mục) (ví dụ: "giá khuyến mãi mùa hè"). 
+    salePrice        Decimal?  @db.Decimal(13, 3) //Giá khuyến mãi (một sản phẩm) (ví dụ: "trong ngày hôm nay")
+    brand            String?
+    categoryId       String?
+    published        Boolean   @default(true)
+    deletedAt        DateTime? // Xóa mềm
+    createdAt        DateTime  @default(now())
+    updatedAt        DateTime  @updatedAt
 
     category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
@@ -18,6 +19,9 @@ model Product {
     Variants              ProductVariant[]
     InventoryTransactions InventoryTransaction[]
     Images                Image[]
+    Snapshots             Snapshot[]
+    PurcharsOrderItems    PurcharsOrderItem[]
 
+    @@index([categoryId])
     @@map("Products")
 }

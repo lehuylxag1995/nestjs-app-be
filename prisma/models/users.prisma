@@ -1,29 +1,37 @@
 enum Role {
-    ADMIN
-    STAFF
-    CUSTOMER
+    ADMIN // CRUD tất cả
+    STAFF // quản lý kho, phiếu nhập, xuất, snapshot
+    CUSTOMER // đặt hàng
 }
 
 model User {
     id       String  @id @default(uuid())
+    //Thông tin định danh chung
     name     String  @unique
     email    String  @unique
-    phone    String
+    phone    String?
     password String
-    address  String
+    address  String?
     CCCD     String?
+    isActive Boolean @default(true)
     role     Role    @default(CUSTOMER)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    // Nhân viên và khách hàng
+    Images Image[]
+    Files  File[]
 
     //Khách vãng lai
     Order Order[]
 
     //Nhân viên 
     InventoryTransactions InventoryTransaction[]
-    Images                Image[]
-    Files                 File[]
+    Snapshots             Snapshot[]
+    createdPurcharsOrder  PurcharsOrder[]        @relation("PO_CreatedBy")
+    recievedPurcharsOrder PurcharsOrder[]        @relation("PO_ReceivedBy")
 
+    @@index([CCCD, phone])
     @@map("Users")
 }

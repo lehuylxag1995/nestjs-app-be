@@ -1,17 +1,24 @@
-//Tồn kho hiện tại
+//CHÚ Ý: 1 dòng lưu trữ trong kho là áp dụng với 1 sản phẩm. Không phải tất cả sản phẩm
 model Inventory {
-    id       String  @id @default(uuid())
-    quantity BigInt // Số lượng trong kho
-    note     String?
+    id                String   @id @default(uuid())
+    productId         String
+    variantId         String   @unique // Kho lưu theo biến thể
+    quantityOnHand    BigInt // Số lượng trong kho thuộc sản phẩm
+    quantityReserved  BigInt // Số lượng khách đặt (dành cho đơn hàng chưa giao,  tránh bán vượt tồn kho)
+    quantityAvaliable BigInt // Số lượng có thể xuất kho
+    averageCostPrice  Decimal  @db.Decimal(13, 3) // Giá vốn bình quân cho 1 sản phẩm
+    totalCostValue    Decimal  @db.Decimal(13, 3) // Giá trị tồn kho cho 1 sản phẩm (averageCost × quantity (Phiếu xuất))
+    minStock          Int? // ngưỡng cảnh báo hết hàng
+    maxStock          Int? // Tồn tối đa (tránh ứ hàng)
+    note              String? //Ghi chú: kiểm kê, cảnh báo
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    // Số lượng trong kho chỉ thuộc 1 biến thể
+    product        Product                @relation(fields: [productId], references: [id])
+    productVariant ProductVariant         @relation(fields: [variantId], references: [id])
+    transactions   InventoryTransaction[]
 
-    // Sản phẩm và chi tiết sản phẩm
-    productId String
-    product   Product        @relation(fields: [productId], references: [id])
-    variantId String         @unique // mỗi biến thể chỉ có 1 dòng tồn kho
-    variant   ProductVariant @relation(fields: [variantId], references: [id])
-
+    @@index([productId])
     @@map("Inventories")
 }
