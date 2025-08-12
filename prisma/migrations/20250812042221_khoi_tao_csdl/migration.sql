@@ -5,7 +5,13 @@ CREATE TYPE "ShopQuanAoTheThao"."TransactionType" AS ENUM ('IMPORT', 'EXPORT', '
 CREATE TYPE "ShopQuanAoTheThao"."OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED');
 
 -- CreateEnum
+CREATE TYPE "ShopQuanAoTheThao"."PriorityType" AS ENUM ('High', 'Medium', 'Low');
+
+-- CreateEnum
 CREATE TYPE "ShopQuanAoTheThao"."PurcharsOrderStatus" AS ENUM ('DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELED');
+
+-- CreateEnum
+CREATE TYPE "ShopQuanAoTheThao"."SnapshotType" AS ENUM ('IMPORT', 'EXPORT', 'ADJUSTMENT', 'DAILY');
 
 -- CreateEnum
 CREATE TYPE "ShopQuanAoTheThao"."Role" AS ENUM ('ADMIN', 'STAFF', 'CUSTOMER');
@@ -112,13 +118,30 @@ CREATE TABLE "ShopQuanAoTheThao"."OrderItems" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
+    "variantId" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
     "listedPrice" DECIMAL(13,3) NOT NULL,
     "totalListedPrice" DECIMAL(13,3) NOT NULL,
     "costPrice" DECIMAL(13,3) NOT NULL,
     "totalCostPrice" DECIMAL(13,3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "OrderItems_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ShopQuanAoTheThao"."PricingRules" (
+    "id" TEXT NOT NULL,
+    "customerId" TEXT,
+    "productVariantId" TEXT,
+    "categoryId" TEXT,
+    "priority" "ShopQuanAoTheThao"."PriorityType",
+    "margin" DECIMAL(5,2) NOT NULL DEFAULT 20,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PricingRules_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -126,9 +149,6 @@ CREATE TABLE "ShopQuanAoTheThao"."Products" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "listedPrice" DECIMAL(13,3) NOT NULL,
-    "promotionalPrice" DECIMAL(13,3),
-    "salePrice" DECIMAL(13,3),
     "brand" TEXT,
     "categoryId" TEXT,
     "published" BOOLEAN NOT NULL DEFAULT true,
@@ -137,6 +157,24 @@ CREATE TABLE "ShopQuanAoTheThao"."Products" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Products_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ShopQuanAoTheThao"."ProductVariants" (
+    "id" TEXT NOT NULL,
+    "sku" TEXT NOT NULL,
+    "size" TEXT NOT NULL,
+    "color" TEXT NOT NULL,
+    "listedPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "promotionalPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "salePrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "published" BOOLEAN NOT NULL DEFAULT true,
+    "deletedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "productId" TEXT NOT NULL,
+
+    CONSTRAINT "ProductVariants_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -163,10 +201,12 @@ CREATE TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" (
     "productId" TEXT NOT NULL,
     "variantId" TEXT NOT NULL,
     "quantity" BIGINT NOT NULL,
-    "receivedQuantity" BIGINT NOT NULL,
+    "receivedQuantity" BIGINT NOT NULL DEFAULT 0,
     "unitCost" DECIMAL(13,3) NOT NULL,
     "taxRate" DECIMAL(5,2) NOT NULL,
     "totalCost" DECIMAL(13,3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PurchaseOrderItems_pkey" PRIMARY KEY ("id")
 );
@@ -176,17 +216,15 @@ CREATE TABLE "ShopQuanAoTheThao"."Snapshot" (
     "id" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "productName" TEXT NOT NULL,
-    "listedPrice" DECIMAL(13,3) NOT NULL,
-    "promotionalPrice" DECIMAL(65,30),
-    "salePrice" DECIMAL(65,30),
+    "listedPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "promotionalPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "salePrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
     "brand" TEXT,
     "categoryId" TEXT,
     "variantId" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
     "size" TEXT NOT NULL,
     "color" TEXT NOT NULL,
-    "reason" TEXT,
-    "createdBy" TEXT,
     "quantityOnHand" BIGINT NOT NULL,
     "quantityReserved" BIGINT NOT NULL,
     "quantityAvailable" BIGINT NOT NULL,
@@ -194,6 +232,7 @@ CREATE TABLE "ShopQuanAoTheThao"."Snapshot" (
     "costPrice" DECIMAL(13,3),
     "discountedPrice" DECIMAL(13,3),
     "totalPrice" DECIMAL(13,3) NOT NULL,
+    "createdById" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Snapshot_pkey" PRIMARY KEY ("id")
@@ -223,30 +262,16 @@ CREATE TABLE "ShopQuanAoTheThao"."Users" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
+    "phone" TEXT,
     "password" TEXT NOT NULL,
-    "address" TEXT NOT NULL,
+    "address" TEXT,
     "CCCD" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "role" "ShopQuanAoTheThao"."Role" NOT NULL DEFAULT 'CUSTOMER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Users_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ShopQuanAoTheThao"."Variants" (
-    "id" TEXT NOT NULL,
-    "sku" TEXT NOT NULL,
-    "size" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
-    "published" BOOLEAN NOT NULL DEFAULT true,
-    "deletedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "productId" TEXT NOT NULL,
-
-    CONSTRAINT "Variants_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -280,10 +305,16 @@ CREATE INDEX "Inventories_productId_idx" ON "ShopQuanAoTheThao"."Inventories"("p
 CREATE INDEX "InventoryTransactions_type_productId_variantId_userId_inven_idx" ON "ShopQuanAoTheThao"."InventoryTransactions"("type", "productId", "variantId", "userId", "inventoryId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PricingRules_customerId_productVariantId_categoryId_key" ON "ShopQuanAoTheThao"."PricingRules"("customerId", "productVariantId", "categoryId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Products_name_key" ON "ShopQuanAoTheThao"."Products"("name");
 
 -- CreateIndex
 CREATE INDEX "Products_categoryId_idx" ON "ShopQuanAoTheThao"."Products"("categoryId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductVariants_sku_key" ON "ShopQuanAoTheThao"."ProductVariants"("sku");
 
 -- CreateIndex
 CREATE INDEX "PurcharsOrders_supplierId_createdById_idx" ON "ShopQuanAoTheThao"."PurcharsOrders"("supplierId", "createdById");
@@ -306,9 +337,6 @@ CREATE UNIQUE INDEX "Users_email_key" ON "ShopQuanAoTheThao"."Users"("email");
 -- CreateIndex
 CREATE INDEX "Users_CCCD_phone_idx" ON "ShopQuanAoTheThao"."Users"("CCCD", "phone");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Variants_sku_key" ON "ShopQuanAoTheThao"."Variants"("sku");
-
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."Categories" ADD CONSTRAINT "Categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "ShopQuanAoTheThao"."Categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -325,13 +353,13 @@ ALTER TABLE "ShopQuanAoTheThao"."Images" ADD CONSTRAINT "Images_userId_fkey" FOR
 ALTER TABLE "ShopQuanAoTheThao"."Inventories" ADD CONSTRAINT "Inventories_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ShopQuanAoTheThao"."Inventories" ADD CONSTRAINT "Inventories_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."Variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ShopQuanAoTheThao"."Inventories" ADD CONSTRAINT "Inventories_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."Variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -352,7 +380,22 @@ ALTER TABLE "ShopQuanAoTheThao"."OrderItems" ADD CONSTRAINT "OrderItems_orderId_
 ALTER TABLE "ShopQuanAoTheThao"."OrderItems" ADD CONSTRAINT "OrderItems_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."OrderItems" ADD CONSTRAINT "OrderItems_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."PricingRules" ADD CONSTRAINT "PricingRules_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ShopQuanAoTheThao"."Categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."PricingRules" ADD CONSTRAINT "PricingRules_productVariantId_fkey" FOREIGN KEY ("productVariantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."PricingRules" ADD CONSTRAINT "PricingRules_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."Products" ADD CONSTRAINT "Products_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ShopQuanAoTheThao"."Categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."ProductVariants" ADD CONSTRAINT "ProductVariants_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."PurcharsOrders" ADD CONSTRAINT "PurcharsOrders_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "ShopQuanAoTheThao"."Suppliers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -370,13 +413,10 @@ ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrd
 ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrderItems_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrderItems_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."Variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrderItems_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."Snapshot" ADD CONSTRAINT "Snapshot_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ShopQuanAoTheThao"."Snapshot" ADD CONSTRAINT "Snapshot_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ShopQuanAoTheThao"."Variants" ADD CONSTRAINT "Variants_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ShopQuanAoTheThao"."Snapshot" ADD CONSTRAINT "Snapshot_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

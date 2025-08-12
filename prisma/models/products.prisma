@@ -1,16 +1,13 @@
 model Product {
-    id               String    @id @default(uuid())
-    name             String    @unique
-    description      String?
-    listedPrice      Decimal   @default(0) @db.Decimal(13, 3) //Giá niêm yết trước mọi khuyến mãi
-    promotionalPrice Decimal?  @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (áp dụng toàn shop, toàn bộ danh mục) (ví dụ: "giá khuyến mãi mùa hè"). 
-    salePrice        Decimal?  @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (một sản phẩm) (ví dụ: "trong ngày hôm nay")
-    brand            String?
-    categoryId       String?
-    published        Boolean   @default(true)
-    deletedAt        DateTime? // Xóa mềm
-    createdAt        DateTime  @default(now())
-    updatedAt        DateTime  @updatedAt
+    id          String    @id @default(uuid())
+    name        String    @unique
+    description String?
+    brand       String?
+    categoryId  String?
+    published   Boolean   @default(true)
+    deletedAt   DateTime? // Xóa mềm
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
 
     category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
@@ -24,4 +21,35 @@ model Product {
 
     @@index([categoryId])
     @@map("Products")
+}
+
+// promotionalPrice:toàn shop hoặc toàn bộ danh mục
+// salePrice:từng sản phẩm/biến thể
+// Ưu tiên áp dụng giá:
+// Khi hiển thị giá, có thể logic lấy salePrice trước, nếu không có mới lấy promotionalPrice, nếu không có nữa mới lấy listedPrice.
+model ProductVariant {
+    id               String  @id @default(uuid())
+    productId        String
+    sku              String  @unique // mã định danh từng biến thể (SPO01-XXL-RED)
+    size             String
+    color            String
+    listedPrice      Decimal @default(0) @db.Decimal(13, 3) // Giá niêm yết trước mọi khuyến mãi
+    promotionalPrice Decimal @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (áp dụng toàn shop, toàn bộ danh mục) (ví dụ: "giá khuyến mãi mùa hè"). 
+    salePrice        Decimal @default(0) @db.Decimal(13, 3) //Giá khuyến mãi (một sản phẩm) (ví dụ: "trong ngày hôm nay")
+    published        Boolean @default(true)
+
+    deletedAt DateTime? // Xóa mềm
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    //Biến thể thuộc duy nhất 1 sản phẩm, nên khi xóa sản phẩm thì biến thể phụ thuộc sẽ bị xóa theo
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    InventoryTransactions InventoryTransaction[]
+    Inventory             Inventory?
+    PurcharsOrderItems    PurcharsOrderItem[]
+    OrderItem             OrderItem[]
+    PricingRule           PricingRule[]
+
+    @@map("ProductVariants")
 }

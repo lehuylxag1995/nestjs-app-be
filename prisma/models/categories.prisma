@@ -7,9 +7,10 @@ model Category {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id], onDelete: SetNull)
-    children Category[] @relation("CategoryToParent")
-    Products Product[]
+    parent      Category?     @relation("CategoryToParent", fields: [parentId], references: [id], onDelete: SetNull)
+    children    Category[]    @relation("CategoryToParent")
+    Products    Product[]
+    PricingRule PricingRule[]
 
     @@map("Categories")
 }

@@ -1,0 +1,29 @@
+// Khi tính giá, bạn nên check theo thứ tự:
+// Rule theo customerId + productVariantId (cao nhất) → giá riêng cho khách cụ thể và sản phẩm cụ thể.
+// Rule theo productVariantId → giá riêng cho một hoặc nhiều sản phẩm .
+// Rule theo categoryId → giá chung cho cả danh mục.
+// Rule mặc định → margin default (ví dụ 20%). Khi customerId=null, productVariantId=null, categoryId=null
+
+enum PriorityType {
+    High // Rule 3 là cao nhất vì áp dụng cho khách hàng CUS456 mua sản phẩm PV123 (cá nhân hóa).
+    Medium //Rule 2 áp dụng cho sản phẩm PV123 nhưng cho tất cả khách hàng khác.
+    Low //Rule 1 áp dụng cho toàn bộ danh mục CAT01 (phạm vi rộng nhất).
+}
+
+model PricingRule {
+    id               String        @id @default(uuid())
+    customerId       String? // Áp dụng cho khách hàng nào đó ? (1-n người % lời khác nhau)
+    productVariantId String? // Áp dụng cho cụ thể sản phẩm ? (1-n sản phẩm % lời khác nhau)
+    categoryId       String? // Áp dụng toàn bộ danh mục ? (1-n danh mục % lời khác nhau)
+    priority         PriorityType? // Độ ưu tiên để tính % lời theo ID nào 
+    margin           Decimal       @default(20) @db.Decimal(5, 2) // Ví dụ 20.00 (%)
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
+
+    category       Category?       @relation(fields: [categoryId], references: [id])
+    productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+    Customer       User?           @relation(fields: [customerId], references: [id])
+
+    @@unique([customerId, productVariantId, categoryId])
+    @@map("PricingRules")
+}

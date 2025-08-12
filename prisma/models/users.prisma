@@ -31,6 +31,7 @@ model User {
     Snapshots             Snapshot[]
     createdPurcharsOrder  PurcharsOrder[]        @relation("PO_CreatedBy")
     recievedPurcharsOrder PurcharsOrder[]        @relation("PO_ReceivedBy")
+    PricingRule           PricingRule[]
 
     @@index([CCCD, phone])
     @@map("Users")

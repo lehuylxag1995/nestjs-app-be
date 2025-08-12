@@ -22,3 +22,58 @@ model Inventory {
     @@index([productId])
     @@map("Inventories")
 }
+
+enum TransactionType {
+    IMPORT // Nhập kho () -> tăng số lượng trong kho
+
+    // Xuất kho -> giảm số lượng trong kho
+    //khi OrderStatus: SHIPPED
+    EXPORT
+
+    // Giữ hàng -> tăng quantityReserved
+    //khi OrderStatus: CONFIRMED
+    RESERVE
+
+    // Thả hàng -> giảm quantityReserved
+    //khi OrderStatus: CANCELLED -> với TransactionType đã là RESERVE
+    RELEASE
+
+    // Trả hàng khách trả lại -> trả lại số lượng trong kho
+    //khi OrderStatus: CANCELLED -> với TransactionType đã là EXPORT
+    //khi OrderStatus: RETURNED 
+    RETURN
+
+    ADJUSTMENT // Điều chỉnh kho (kiểm kê) -> tăng hoặc giảm
+}
+
+//Lưu mọi biến động kho — bao gồm bán, nhập, trả hàng, hủy...
+model InventoryTransaction {
+    id          String          @id @default(uuid())
+    type        TransactionType @default(ADJUSTMENT) // IMPORT, EXPORT, RETURN, ADJUSTMENT
+    orderId     String? //Có áp dụng theo đơn hàng không ?
+    quantity    BigInt          @default(0) // số lượng + (nhập) hoặc - (xuất)
+    costPrice   Decimal         @default(0) @db.Decimal(13, 3) // Nếu type là import là giá vốn, 
+    listedPrice Decimal         @default(0) @db.Decimal(13, 3) // Nếu type là export là giá bán (giá niêm yết)
+    total       Decimal         @default(0) @db.Decimal(13, 3) // Giá × quantity
+
+    productId   String //Nhập/xuất sản phẩm gì ?
+    variantId   String //Biến thể sản phẩm đó
+    userId      String //Người chịu trách nhiệm nhập/xuất
+    inventoryId String //Liên quan tới dữ liệu nào trong kho ?
+
+    note      String? //bán hàng, hủy đơn, nhập theo lô A...
+    createdAt DateTime @default(now())
+
+    //Thông tin sản phẩm
+    product        Product        @relation(fields: [productId], references: [id])
+    productVariant ProductVariant @relation(fields: [variantId], references: [id])
+    //Thông tin người chịu trách nhiệm
+    user           User           @relation(fields: [userId], references: [id])
+    //Thông tin liên quan Export
+    order          Order?         @relation(fields: [orderId], references: [id])
+    //Thông tin liên quan kho
+    inventory      Inventory      @relation(fields: [inventoryId], references: [id])
+
+    @@index([type, productId, variantId, userId, inventoryId])
+    @@map("InventoryTransactions")
+}

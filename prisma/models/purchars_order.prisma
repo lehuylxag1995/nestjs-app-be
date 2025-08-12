@@ -34,11 +34,14 @@ model PurcharsOrderItem {
     purcharsOrderId  String
     productId        String
     variantId        String
-    quantity         BigInt // Số lượng yêu cầu 
-    receivedQuantity BigInt // Số lượng thực nhận
-    unitCost         Decimal @db.Decimal(13, 3) // Giá từ nhà cung cấp (giá mua)
-    taxRate          Decimal @db.Decimal(5, 2) // Thuế bao nhiêu phần trăm
+    quantity         BigInt // Số lượng yêu cầu random
+    receivedQuantity BigInt  @default(0) // Số lượng thực nhận 
+    unitCost         Decimal @db.Decimal(13, 3) // Giá từ nhà cung cấp random (giá mua, giá vốn)
+    taxRate          Decimal @db.Decimal(5, 2) // Thuế bao nhiêu phần trăm random
     totalCost        Decimal @db.Decimal(13, 3) // Thành tiền
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     purcharOrder PurcharsOrder  @relation(fields: [purcharsOrderId], references: [id])
     product      Product        @relation(fields: [productId], references: [id])
@@ -52,11 +55,7 @@ model PurcharsOrderItem {
 // Nhận một phần hoặc toàn bộ hàng:
 // Cập nhật receivedQuantity trong PurchaseOrderItem
 // Tạo InventoryTransaction type = IMPORT
-// Nếu nhận đủ → status = RECEIVED
-// Nếu chưa đủ → status = PARTIALLY_RECEIVEDTạo PurchaseOrder → status = DRAFT
-// Gửi PO cho nhà cung cấp → status = SENT
-// Nhận một phần hoặc toàn bộ hàng:
-// Cập nhật receivedQuantity trong PurchaseOrderItem
-// Tạo InventoryTransaction type = IMPORT
-// Nếu nhận đủ → status = RECEIVED
-// Nếu chưa đủ → status = PARTIALLY_RECEIVED
+//      Nếu nhận đủ → status = RECEIVED
+//      Nếu chưa đủ → status = PARTIALLY_RECEIVED
+
+// hàm nhập hàng (PurcharsOrderItem + update tồn kho + tính averageCostPrice mới + update giá niêm yết) 
