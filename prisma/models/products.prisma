@@ -46,10 +46,10 @@ model ProductVariant {
     product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
     InventoryTransactions InventoryTransaction[]
-    Inventory             Inventory?
+    Inventories           Inventory?
     PurcharsOrderItems    PurcharsOrderItem[]
-    OrderItem             OrderItem[]
-    PricingRule           PricingRule[]
+    OrderItems            OrderItem[]
+    PricingRules          PricingRule[]
 
     @@map("ProductVariants")
 }

@@ -13,11 +13,12 @@ model Supplier {
     bankAccount String?
 
     //Thông tin khác
-    note          String?
-    isActive      Boolean         @default(true)
-    createdAt     DateTime        @default(now())
-    updatedAt     DateTime        @updatedAt
-    PurcharsOrder PurcharsOrder[]
+    note      String?
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    PurcharsOrders PurcharsOrder[]
 
     @@index([taxId])
     @@map("Suppliers")

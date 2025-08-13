@@ -1,5 +1,6 @@
 model File {
     id           String  @id @default(uuid())
+    userId       String?
     originalName String // Tên ảnh gốc khi upload
     filename     String  @unique //	Tên file được lưu trên server, đảm bảo duy nhấ
     mimetype     String // Kiểu MIME của file
@@ -10,8 +11,7 @@ model File {
     published    Boolean @default(true)
 
     //ID của bản ghi liên kết (nếu có)
-    userId String?
-    user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+    User User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

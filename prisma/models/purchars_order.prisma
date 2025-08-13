@@ -1,6 +1,5 @@
 enum PurcharsOrderStatus {
     DRAFT // Tạo chưa gửi nhà cung cấp
-    SENT // Gửi cho nhà cung cấp rồi
     PARTIALLY_RECEIVED // Shop nhận một phần còn một phần
     RECEIVED // Shop nhận đủ hàng từ nhà cung cấp
     CANCELED // Shop hủy đơn đặt hàng từ nhà cung cấp
@@ -9,45 +8,65 @@ enum PurcharsOrderStatus {
 //Đơn đặt hàng với nhà cung cấp
 model PurcharsOrder {
     id                   String              @id @default(uuid())
-    supplierId           String
+    status               PurcharsOrderStatus @default(DRAFT) //Trạng thái đơn hàng
+    supplierId           String // Nhà cung cấp
     createdById          String // Người tạo đơn
     receivedById         String? // Người nhận hàng
     orderDate            DateTime // Ngày đặt hàng
-    expectedDeliveryDate DateTime? // Ngày giao hàng dự kiến
-    status               PurcharsOrderStatus @default(DRAFT) //Trạng thái đơn hàng
-    total                Decimal?            @default(0) @db.Decimal(13, 3) //Tính toán từ PurcharsOrderItem
+    expectedDeliveryDate DateTime // Ngày giao hàng dự kiến
+    totalNotTax          Decimal             @default(0) @db.Decimal(13, 3) // Tổng giá trị chưa thuế
+    totalWithTax         Decimal             @default(0) @db.Decimal(13, 3) // Tổng giá trị đã bao gồm thuế
     note                 String? // Ghi chú đơn đặt hàng với nhà cung cấp
     createdAt            DateTime            @default(now())
     updatedAt            DateTime            @updatedAt
 
-    supplier           Supplier            @relation(fields: [supplierId], references: [id])
-    createdBy          User                @relation("PO_CreatedBy", fields: [createdById], references: [id])
-    receivedBy         User?               @relation("PO_ReceivedBy", fields: [receivedById], references: [id])
-    PurcharsOrderItems PurcharsOrderItem[]
+    Supplier              Supplier               @relation(fields: [supplierId], references: [id])
+    CreatedBy             User                   @relation("PO_CreatedBy", fields: [createdById], references: [id])
+    ReceivedBy            User?                  @relation("PO_ReceivedBy", fields: [receivedById], references: [id])
+    PurcharsOrderItems    PurcharsOrderItem[]
+    InventoryTransactions InventoryTransaction[]
 
     @@index([supplierId, createdById])
     @@map("PurcharsOrders")
 }
 
 model PurcharsOrderItem {
-    id               String  @id @default(uuid())
-    purcharsOrderId  String
-    productId        String
-    variantId        String
-    quantity         BigInt // Số lượng yêu cầu random
-    receivedQuantity BigInt  @default(0) // Số lượng thực nhận 
-    unitCost         Decimal @db.Decimal(13, 3) // Giá từ nhà cung cấp random (giá mua, giá vốn)
-    taxRate          Decimal @db.Decimal(5, 2) // Thuế bao nhiêu phần trăm random
-    totalCost        Decimal @db.Decimal(13, 3) // Thành tiền
+    id                    String  @id @default(uuid())
+    purcharsOrderId       String
+    productId             String
+    variantId             String
+    orderQuantity         BigInt // Số lượng yêu cầu random
+    totalReceivedQuantity BigInt  @default(0) // Số lượng thực nhận 
+    unitCost              Decimal @default(0) @db.Decimal(13, 3) // Giá từ nhà cung cấp random (giá mua, giá vốn)
+    taxRate               Decimal @default(0) @db.Decimal(5, 2) // Thuế bao nhiêu phần trăm random
+    taxAmount             Decimal @default(0) @db.Decimal(13, 3) // Thuế thành tiền
+    unitCostWithTax       Decimal @default(0) @db.Decimal(13, 3) // Giá sau thuế
+    totalCostNotTax       Decimal @default(0) @db.Decimal(13, 3) // Thành tiền không thuế
+    totalCostWithTax      Decimal @default(0) @db.Decimal(13, 3) // Thành tiền chịu thuế
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    purcharOrder PurcharsOrder  @relation(fields: [purcharsOrderId], references: [id])
-    product      Product        @relation(fields: [productId], references: [id])
-    variant      ProductVariant @relation(fields: [variantId], references: [id])
+    PurcharOrder              PurcharsOrder              @relation(fields: [purcharsOrderId], references: [id])
+    Product                   Product                    @relation(fields: [productId], references: [id])
+    ProductVariant            ProductVariant             @relation(fields: [variantId], references: [id])
+    PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
 
     @@map("PurchaseOrderItems")
+}
+
+//Bảng này dành riêng cho PurcharsOrder status = Partially_received.
+//Để lưu tất cả lần nhận theo PurcharsOrderItem
+model PurchaseOrderItemReceipt {
+    id                  String   @id @default(uuid())
+    purcharsOrderItemId String // Thuộc chi tiết đơn nhập hàng nào ?
+    receivedQuantity    BigInt // Số lượng nhận
+    receivedById        String // Người nhận đơn
+    receivedDate        DateTime @default(now()) // Ngày nhận
+    note                String? // vd:Nhập bổ sung thêm theo đơn nhập hàng
+
+    ReceivedBy        User              @relation(fields: [receivedById], references: [id])
+    PurcharsOrderItem PurcharsOrderItem @relation(fields: [purcharsOrderItemId], references: [id])
 }
 
 // Tạo PurchaseOrder → status = DRAFT
@@ -59,3 +78,7 @@ model PurcharsOrderItem {
 //      Nếu chưa đủ → status = PARTIALLY_RECEIVED
 
 // hàm nhập hàng (PurcharsOrderItem + update tồn kho + tính averageCostPrice mới + update giá niêm yết) 
+
+//Trường hợp số lượng nhập hàng orderQuantity === totalReceivedQuantity (status RECEIVED)
+//Trường hợp số lượng nhập hàng orderQuantity > totalReceivedQuantity:
+//  Áp dụng bảng PurchaseOrderItemReceipt để xác nhận đã nhận thêm cho đủ.

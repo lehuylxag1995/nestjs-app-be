@@ -20,8 +20,8 @@ model PricingRule {
     createdAt        DateTime      @default(now())
     updatedAt        DateTime      @updatedAt
 
-    category       Category?       @relation(fields: [categoryId], references: [id])
-    productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+    Category       Category?       @relation(fields: [categoryId], references: [id])
+    ProductVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
     Customer       User?           @relation(fields: [customerId], references: [id])
 
     @@unique([customerId, productVariantId, categoryId])

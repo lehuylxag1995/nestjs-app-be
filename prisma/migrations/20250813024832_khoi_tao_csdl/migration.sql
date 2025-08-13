@@ -8,7 +8,7 @@ CREATE TYPE "ShopQuanAoTheThao"."OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', '
 CREATE TYPE "ShopQuanAoTheThao"."PriorityType" AS ENUM ('High', 'Medium', 'Low');
 
 -- CreateEnum
-CREATE TYPE "ShopQuanAoTheThao"."PurcharsOrderStatus" AS ENUM ('DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELED');
+CREATE TYPE "ShopQuanAoTheThao"."PurcharsOrderStatus" AS ENUM ('DRAFT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELED');
 
 -- CreateEnum
 CREATE TYPE "ShopQuanAoTheThao"."SnapshotType" AS ENUM ('IMPORT', 'EXPORT', 'ADJUSTMENT', 'DAILY');
@@ -86,6 +86,7 @@ CREATE TABLE "ShopQuanAoTheThao"."Inventories" (
 CREATE TABLE "ShopQuanAoTheThao"."InventoryTransactions" (
     "id" TEXT NOT NULL,
     "type" "ShopQuanAoTheThao"."TransactionType" NOT NULL DEFAULT 'ADJUSTMENT',
+    "purcharsOrderId" TEXT,
     "orderId" TEXT,
     "quantity" BIGINT NOT NULL DEFAULT 0,
     "costPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
@@ -162,6 +163,7 @@ CREATE TABLE "ShopQuanAoTheThao"."Products" (
 -- CreateTable
 CREATE TABLE "ShopQuanAoTheThao"."ProductVariants" (
     "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
     "size" TEXT NOT NULL,
     "color" TEXT NOT NULL,
@@ -172,7 +174,6 @@ CREATE TABLE "ShopQuanAoTheThao"."ProductVariants" (
     "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "productId" TEXT NOT NULL,
 
     CONSTRAINT "ProductVariants_pkey" PRIMARY KEY ("id")
 );
@@ -200,8 +201,8 @@ CREATE TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" (
     "purcharsOrderId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "variantId" TEXT NOT NULL,
-    "quantity" BIGINT NOT NULL,
-    "receivedQuantity" BIGINT NOT NULL DEFAULT 0,
+    "orderQuantity" BIGINT NOT NULL,
+    "totalReceivedQuantity" BIGINT NOT NULL DEFAULT 0,
     "unitCost" DECIMAL(13,3) NOT NULL,
     "taxRate" DECIMAL(5,2) NOT NULL,
     "totalCost" DECIMAL(13,3) NOT NULL,
@@ -209,6 +210,18 @@ CREATE TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PurchaseOrderItems_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ShopQuanAoTheThao"."PurchaseOrderItemReceipt" (
+    "id" TEXT NOT NULL,
+    "purcharsOrderItemId" TEXT NOT NULL,
+    "receivedQuantity" BIGINT NOT NULL,
+    "receivedById" TEXT NOT NULL,
+    "receivedDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "note" TEXT,
+
+    CONSTRAINT "PurchaseOrderItemReceipt_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -365,6 +378,9 @@ ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "Inventor
 ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_purcharsOrderId_fkey" FOREIGN KEY ("purcharsOrderId") REFERENCES "ShopQuanAoTheThao"."PurcharsOrders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."InventoryTransactions" ADD CONSTRAINT "InventoryTransactions_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "ShopQuanAoTheThao"."Orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -414,6 +430,12 @@ ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrd
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" ADD CONSTRAINT "PurchaseOrderItems_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ShopQuanAoTheThao"."ProductVariants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItemReceipt" ADD CONSTRAINT "PurchaseOrderItemReceipt_receivedById_fkey" FOREIGN KEY ("receivedById") REFERENCES "ShopQuanAoTheThao"."Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShopQuanAoTheThao"."PurchaseOrderItemReceipt" ADD CONSTRAINT "PurchaseOrderItemReceipt_purcharsOrderItemId_fkey" FOREIGN KEY ("purcharsOrderItemId") REFERENCES "ShopQuanAoTheThao"."PurchaseOrderItems"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ShopQuanAoTheThao"."Snapshot" ADD CONSTRAINT "Snapshot_productId_fkey" FOREIGN KEY ("productId") REFERENCES "ShopQuanAoTheThao"."Products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

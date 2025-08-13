@@ -1,5 +1,7 @@
 model Image {
     id           String   @id @default(uuid())
+    productId    String?
+    userId       String?
     originalName String // Tên ảnh gốc khi upload
     filename     String   @unique // Tên file được lưu trên server, đảm bảo duy nhất
     path         String // Đường dẫn lưu trữ vd: /uploads/images/user/d5a7e8f2-abc1-42f7.png
@@ -9,10 +11,8 @@ model Image {
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
 
-    productId String?
-    product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-    userId    String?
-    user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+    Product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+    User    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
     @@index([productId])
     @@index([userId])

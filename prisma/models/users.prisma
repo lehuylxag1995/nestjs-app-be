@@ -24,14 +24,15 @@ model User {
     Files  File[]
 
     //Khách vãng lai
-    Order Order[]
+    Orders Order[]
 
     //Nhân viên 
-    InventoryTransactions InventoryTransaction[]
-    Snapshots             Snapshot[]
-    createdPurcharsOrder  PurcharsOrder[]        @relation("PO_CreatedBy")
-    recievedPurcharsOrder PurcharsOrder[]        @relation("PO_ReceivedBy")
-    PricingRule           PricingRule[]
+    InventoryTransactions     InventoryTransaction[]
+    Snapshots                 Snapshot[]
+    createdPurcharsOrders     PurcharsOrder[]            @relation("PO_CreatedBy")
+    recievedPurcharsOrders    PurcharsOrder[]            @relation("PO_ReceivedBy")
+    PricingRules              PricingRule[]
+    PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
 
     @@index([CCCD, phone])
     @@map("Users")
