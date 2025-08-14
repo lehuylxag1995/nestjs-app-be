@@ -3,11 +3,15 @@ model Inventory {
     id                String   @id @default(uuid())
     productId         String
     variantId         String   @unique // Kho lưu theo biến thể
+    // Update lại mỗi khi import hàng
     quantityOnHand    BigInt // Số lượng trong kho thuộc sản phẩm
     quantityReserved  BigInt // Số lượng khách đặt (dành cho đơn hàng chưa giao,  tránh bán vượt tồn kho)
-    quantityAvaliable BigInt // Số lượng có thể xuất kho
-    averageCostPrice  Decimal  @db.Decimal(13, 3) // Giá vốn bình quân cho 1 sản phẩm
-    totalCostValue    Decimal  @db.Decimal(13, 3) // Giá trị tồn kho cho 1 sản phẩm (averageCost × quantity (Phiếu xuất))
+    //Dùng tránh bán vượt tồn kho, hiển thị cho khách biết thực tế, kết hợp với minStock để thông báo
+    quantityAvaliable BigInt // Số lượng có thể xuất kho ( quantityOnHand - quantityReserved)
+    // Update lại mỗi khi import hàng
+    averageCostPrice  Decimal  @db.Decimal(13, 3) // Giá nhập bình quân gia quyền cho 1 sản phẩm
+    // Không lấy từ InventoryTransaction trực tiếp mà tính từ số lượng tồn và giá vốn mới.
+    totalCostValue    Decimal  @db.Decimal(13, 3) // Giá trị tồn kho cho 1 sản phẩm (averageCost × quantityOnHand)
     minStock          Int? // ngưỡng cảnh báo hết hàng
     maxStock          Int? // Tồn tối đa (tránh ứ hàng)
     note              String? //Ghi chú: kiểm kê, cảnh báo

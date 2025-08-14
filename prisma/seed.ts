@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { updateInventoryByImport } from './seeds/inventories.seed';
+
 import { createCategories } from './seeds/categories.seed';
 import { createInventoryByProductAndVariants } from './seeds/inventories.seed';
-import { createInventoryTransactions } from './seeds/inventory_transactions.seed';
+import { createInventoryTransactionsByPurcharsOrder } from './seeds/inventory_transactions.seed';
 import { createPricingRule } from './seeds/pricing_rule.seed';
 import { createProductImageForProducts } from './seeds/product_images.seed';
 import { createProductVariantForProducts } from './seeds/product_vartiants.seed';
@@ -41,9 +43,11 @@ async function main() {
   await createPurscharOrderItemReceipt();
   console.log('✅ Seed Purchars Order Item Receipt');
 
-  //Luồng quản lý kho -> để tạo giá niêm yết
-  await createInventoryTransactions();
+  // //Luồng quản lý kho -> để tạo giá niêm yết
+  await createInventoryTransactionsByPurcharsOrder();
   console.log('✅ Seed Inventory Transaction (Import) ');
+  await updateInventoryByImport();
+  console.log('✅ Seed Inventory (Import) ');
 }
 
 main()

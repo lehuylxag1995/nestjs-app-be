@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-//Tạo biến động giao dịch phiếu nhập
-export async function createInventoryTransactions() {
+//Tạo biến động giao dịch phiếu nhập (nhập hàng)
+export async function createInventoryTransactionsByPurcharsOrder() {
   //Lấy ra đơn nhập hàng có type là partially_received hoặc received
   const purcharsOrders = await prisma.purcharsOrder.findMany({
     where: {
@@ -63,3 +63,5 @@ export async function createInventoryTransactions() {
     }
   }
 }
+
+// Tạo biến động giao dịch phiếu xuất (bán hàng)
