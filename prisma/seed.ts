@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { updateInventoryByImport } from './seeds/inventories.seed';
 
 import { createCategories } from './seeds/categories.seed';
 import { createInventoryByProductAndVariants } from './seeds/inventories.seed';
@@ -8,15 +7,13 @@ import { createPricingRule } from './seeds/pricing_rule.seed';
 import { createProductImageForProducts } from './seeds/product_images.seed';
 import { createProductVariantForProducts } from './seeds/product_vartiants.seed';
 import { createProductForLeafCategories } from './seeds/products.seed';
-import { createPurcharsOrderBySupplier } from './seeds/purchars_order.seed';
-import { createPurscharOrderItemReceipt } from './seeds/purchars_order_item_receipt.seed';
-import { createPurcharsOrderItemsByPurcharsOrder } from './seeds/purchars_order_items.seed';
+import { createPurcharOrder } from './seeds/purchars_order.seed';
 import { createSupplier } from './seeds/suppliers.seed';
 import { createUsers } from './seeds/users.seed';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function runThongTinCoBan() {
   //Luồng thông tin cơ bản
   await createUsers(50, 5, 2);
   console.log('✅ Seed User');
@@ -34,20 +31,24 @@ async function main() {
   console.log('✅ Seed Pricing Rule');
   await createInventoryByProductAndVariants();
   console.log('✅ Seed Inventory');
+}
 
+async function luongNhapHang() {
   //Luồng nhập hàng
-  await createPurcharsOrderBySupplier(5, 10, 20, 2);
+  await createPurcharOrder();
   console.log('✅ Seed Purchars Order');
-  await createPurcharsOrderItemsByPurcharsOrder(1, 5);
-  console.log('✅ Seed Purchars Order Item');
-  await createPurscharOrderItemReceipt();
-  console.log('✅ Seed Purchars Order Item Receipt');
+}
 
-  // //Luồng quản lý kho -> để tạo giá niêm yết
+async function luongImportKho() {
+  //Luồng quản lý kho -> để tạo giá niêm yết
   await createInventoryTransactionsByPurcharsOrder();
-  console.log('✅ Seed Inventory Transaction (Import) ');
-  await updateInventoryByImport();
-  console.log('✅ Seed Inventory (Import) ');
+  console.log('✅ Seed Inventory Transaction + Invetory (Import)');
+}
+
+async function main() {
+  await runThongTinCoBan();
+  await luongNhapHang();
+  await luongImportKho();
 }
 
 main()

@@ -11,7 +11,6 @@ model PurcharsOrder {
     status               PurcharsOrderStatus @default(DRAFT) //Trạng thái đơn hàng
     supplierId           String // Nhà cung cấp
     createdById          String // Người tạo đơn
-    receivedById         String? // Người nhận hàng
     orderDate            DateTime // Ngày đặt hàng
     expectedDeliveryDate DateTime // Ngày giao hàng dự kiến
     totalNotTax          Decimal             @default(0) @db.Decimal(13, 3) // Tổng giá trị chưa thuế
@@ -20,9 +19,9 @@ model PurcharsOrder {
     createdAt            DateTime            @default(now())
     updatedAt            DateTime            @updatedAt
 
-    Supplier              Supplier               @relation(fields: [supplierId], references: [id])
-    CreatedBy             User                   @relation("PO_CreatedBy", fields: [createdById], references: [id])
-    ReceivedBy            User?                  @relation("PO_ReceivedBy", fields: [receivedById], references: [id])
+    Supplier  Supplier @relation(fields: [supplierId], references: [id])
+    CreatedBy User     @relation(fields: [createdById], references: [id])
+
     PurcharsOrderItems    PurcharsOrderItem[]
     InventoryTransactions InventoryTransaction[]
 
@@ -58,15 +57,16 @@ model PurcharsOrderItem {
 //Bảng này dành riêng cho PurcharsOrder status = Partially_received.
 //Để lưu tất cả lần nhận theo PurcharsOrderItem
 model PurchaseOrderItemReceipt {
-    id                  String   @id @default(uuid())
-    purcharsOrderItemId String // Thuộc chi tiết đơn nhập hàng nào ?
-    receivedQuantity    BigInt // Số lượng nhận
-    receivedById        String // Người nhận đơn
-    receivedDate        DateTime @default(now()) // Ngày nhận
-    note                String? // vd:Nhập bổ sung thêm theo đơn nhập hàng
-
-    ReceivedBy        User              @relation(fields: [receivedById], references: [id])
-    PurcharsOrderItem PurcharsOrderItem @relation(fields: [purcharsOrderItemId], references: [id])
+    id                   String                @id @default(uuid())
+    purcharsOrderItemId  String // Thuộc chi tiết đơn nhập hàng nào ?
+    receivedQuantity     BigInt // Số lượng nhận
+    receivedById         String // Người nhận đơn
+    receivedDate         DateTime              @default(now()) // Ngày nhận
+    note                 String? // vd:Nhập bổ sung thêm theo đơn nhập hàng
+    isProcessTransaction Boolean               @default(false) // Để kiểm tra InventoryTransaction tránh bị cộng dồn đơn cũ
+    ReceivedBy           User                  @relation(fields: [receivedById], references: [id])
+    PurcharsOrderItem    PurcharsOrderItem     @relation(fields: [purcharsOrderItemId], references: [id])
+    InventoryTransaction InventoryTransaction?
 }
 
 // Tạo PurchaseOrder → status = DRAFT

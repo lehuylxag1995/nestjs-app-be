@@ -29,9 +29,8 @@ model User {
     //Nhân viên 
     InventoryTransactions     InventoryTransaction[]
     Snapshots                 Snapshot[]
-    createdPurcharsOrders     PurcharsOrder[]            @relation("PO_CreatedBy")
-    recievedPurcharsOrders    PurcharsOrder[]            @relation("PO_ReceivedBy")
     PricingRules              PricingRule[]
+    PurcharsOrder             PurcharsOrder[]
     PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
 
     @@index([CCCD, phone])

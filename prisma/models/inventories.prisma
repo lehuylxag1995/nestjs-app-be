@@ -23,6 +23,7 @@ model Inventory {
     ProductVariant ProductVariant         @relation(fields: [variantId], references: [id])
     Transactions   InventoryTransaction[]
 
+    @@unique([productId, variantId]) //lookup nhanh hơn và đảm bảo không bị 2 bản ghi trùng.
     @@index([productId])
     @@map("Inventories")
 }
@@ -53,20 +54,21 @@ enum TransactionType {
 //Lưu mọi biến động kho — bao gồm bán, nhập, trả hàng, hủy... để quản lý kho
 model InventoryTransaction {
     //Thông tin chung
-    id               String          @id @default(uuid())
-    type             TransactionType @default(ADJUSTMENT) // IMPORT, EXPORT, RETURN, ADJUSTMENT
-    purcharsOrderId  String? //Có áp dụng theo đơn nhập ? 
-    orderId          String? //Có áp dụng theo đơn bán ? 
-    quantity         BigInt          @default(0) // số lượng + (nhập) hoặc - (xuất)
+    id                         String          @id @default(uuid())
+    type                       TransactionType @default(ADJUSTMENT) // IMPORT, EXPORT, RETURN, ADJUSTMENT
+    purcharsOrderId            String? //Có áp dụng theo đơn nhập ? 
+    purcharsOrderItemRecieptId String          @unique
+    orderId                    String? //Có áp dụng theo đơn bán ? 
+    quantity                   BigInt          @default(0) // số lượng + (nhập) hoặc - (xuất)
     //Bán hàng
-    listedPrice      Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là export là giá bán (giá niêm yết bao gồm thuế)
+    listedPrice                Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là export là giá bán (giá niêm yết bao gồm thuế)
     //Nhập hàng
-    costPrice        Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là import là giá vốn chưa bao gồm thuế
-    taxRate          Decimal?        @default(0) @db.Decimal(5, 3) // % Thuế
-    taxAmount        Decimal?        @default(0) @db.Decimal(13, 3) // unitCost/costPrice * (taxRate/100) 
-    costPriceWithTax Decimal?        @default(0) @db.Decimal(13, 3) // Giá sau thuế : costPrice + taxAmount
-    totalCostNotTax  Decimal?        @default(0) @db.Decimal(13, 3) // costPrice * quantity
-    totalCostWithTax Decimal?        @default(0) @db.Decimal(13, 3) // costPriceWithTax * quantity
+    costPrice                  Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là import là giá vốn chưa bao gồm thuế
+    taxRate                    Decimal?        @default(0) @db.Decimal(5, 3) // % Thuế
+    taxAmount                  Decimal?        @default(0) @db.Decimal(13, 3) // unitCost/costPrice * (taxRate/100) 
+    costPriceWithTax           Decimal?        @default(0) @db.Decimal(13, 3) // Giá sau thuế : costPrice + taxAmount
+    totalCostNotTax            Decimal?        @default(0) @db.Decimal(13, 3) // costPrice * quantity
+    totalCostWithTax           Decimal?        @default(0) @db.Decimal(13, 3) // costPriceWithTax * quantity
 
     productId   String //Nhập/xuất sản phẩm gì ?
     variantId   String //Biến thể sản phẩm đó
@@ -77,15 +79,16 @@ model InventoryTransaction {
     createdAt DateTime @default(now())
 
     //Thông tin sản phẩm
-    Product        Product        @relation(fields: [productId], references: [id])
-    ProductVariant ProductVariant @relation(fields: [variantId], references: [id])
+    Product                  Product                  @relation(fields: [productId], references: [id])
+    ProductVariant           ProductVariant           @relation(fields: [variantId], references: [id])
     //Thông tin người chịu trách nhiệm
-    User           User           @relation(fields: [userId], references: [id])
+    User                     User                     @relation(fields: [userId], references: [id])
     //Thông tin liên quan Import/Export
-    PurcharsOrder  PurcharsOrder? @relation(fields: [purcharsOrderId], references: [id])
-    Order          Order?         @relation(fields: [orderId], references: [id])
+    PurcharsOrder            PurcharsOrder?           @relation(fields: [purcharsOrderId], references: [id])
+    PurcharsOrderItemReceipt PurchaseOrderItemReceipt @relation(fields: [purcharsOrderItemRecieptId], references: [id])
+    Order                    Order?                   @relation(fields: [orderId], references: [id])
     //Thông tin liên quan kho
-    Inventory      Inventory      @relation(fields: [inventoryId], references: [id])
+    Inventory                Inventory                @relation(fields: [inventoryId], references: [id])
 
     @@index([type, productId, variantId, userId, inventoryId])
     @@map("InventoryTransactions")

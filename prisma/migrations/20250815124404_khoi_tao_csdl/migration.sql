@@ -31,6 +31,7 @@ CREATE TABLE "ShopQuanAoTheThao"."Categories" (
 -- CreateTable
 CREATE TABLE "ShopQuanAoTheThao"."Files" (
     "id" TEXT NOT NULL,
+    "userId" TEXT,
     "originalName" TEXT NOT NULL,
     "filename" TEXT NOT NULL,
     "mimetype" TEXT NOT NULL,
@@ -39,7 +40,6 @@ CREATE TABLE "ShopQuanAoTheThao"."Files" (
     "extension" TEXT NOT NULL,
     "subtype" TEXT NOT NULL,
     "published" BOOLEAN NOT NULL DEFAULT true,
-    "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -49,6 +49,8 @@ CREATE TABLE "ShopQuanAoTheThao"."Files" (
 -- CreateTable
 CREATE TABLE "ShopQuanAoTheThao"."Images" (
     "id" TEXT NOT NULL,
+    "productId" TEXT,
+    "userId" TEXT,
     "originalName" TEXT NOT NULL,
     "filename" TEXT NOT NULL,
     "path" TEXT NOT NULL,
@@ -57,8 +59,6 @@ CREATE TABLE "ShopQuanAoTheThao"."Images" (
     "published" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "productId" TEXT,
-    "userId" TEXT,
 
     CONSTRAINT "Images_pkey" PRIMARY KEY ("id")
 );
@@ -89,9 +89,13 @@ CREATE TABLE "ShopQuanAoTheThao"."InventoryTransactions" (
     "purcharsOrderId" TEXT,
     "orderId" TEXT,
     "quantity" BIGINT NOT NULL DEFAULT 0,
-    "costPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
-    "listedPrice" DECIMAL(13,3) NOT NULL DEFAULT 0,
-    "total" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "listedPrice" DECIMAL(13,3) DEFAULT 0,
+    "costPrice" DECIMAL(13,3) DEFAULT 0,
+    "taxRate" DECIMAL(5,3) DEFAULT 0,
+    "taxAmount" DECIMAL(13,3) DEFAULT 0,
+    "costPriceWithTax" DECIMAL(13,3) DEFAULT 0,
+    "totalCostNotTax" DECIMAL(13,3) DEFAULT 0,
+    "totalCostWithTax" DECIMAL(13,3) DEFAULT 0,
     "productId" TEXT NOT NULL,
     "variantId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -181,13 +185,14 @@ CREATE TABLE "ShopQuanAoTheThao"."ProductVariants" (
 -- CreateTable
 CREATE TABLE "ShopQuanAoTheThao"."PurcharsOrders" (
     "id" TEXT NOT NULL,
+    "status" "ShopQuanAoTheThao"."PurcharsOrderStatus" NOT NULL DEFAULT 'DRAFT',
     "supplierId" TEXT NOT NULL,
     "createdById" TEXT NOT NULL,
     "receivedById" TEXT,
     "orderDate" TIMESTAMP(3) NOT NULL,
-    "expectedDeliveryDate" TIMESTAMP(3),
-    "status" "ShopQuanAoTheThao"."PurcharsOrderStatus" NOT NULL DEFAULT 'DRAFT',
-    "total" DECIMAL(13,3) DEFAULT 0,
+    "expectedDeliveryDate" TIMESTAMP(3) NOT NULL,
+    "totalNotTax" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "totalWithTax" DECIMAL(13,3) NOT NULL DEFAULT 0,
     "note" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -203,9 +208,12 @@ CREATE TABLE "ShopQuanAoTheThao"."PurchaseOrderItems" (
     "variantId" TEXT NOT NULL,
     "orderQuantity" BIGINT NOT NULL,
     "totalReceivedQuantity" BIGINT NOT NULL DEFAULT 0,
-    "unitCost" DECIMAL(13,3) NOT NULL,
-    "taxRate" DECIMAL(5,2) NOT NULL,
-    "totalCost" DECIMAL(13,3) NOT NULL,
+    "unitCost" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "taxRate" DECIMAL(5,2) NOT NULL DEFAULT 0,
+    "taxAmount" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "unitCostWithTax" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "totalCostNotTax" DECIMAL(13,3) NOT NULL DEFAULT 0,
+    "totalCostWithTax" DECIMAL(13,3) NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
