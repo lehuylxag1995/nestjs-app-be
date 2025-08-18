@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { fakerVI } from '@faker-js/faker';
+import { Prisma, PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 //Tạo biến động giao dịch phiếu nhập (nhập hàng)
@@ -121,6 +122,76 @@ export async function createInventoryTransactionsByPurcharsOrder() {
         where: { id: receipt.PurcharsOrderItem.variantId },
         data: {
           listedPrice: newAvgCost * (margin / 100 + 1),
+        },
+      });
+    }
+  });
+}
+
+// Tạo biến động giao dịch bán hàng (xuất hàng)
+export async function createInventoryTransactionByOrder() {
+  await prisma.$transaction(async (prisma) => {
+    //Danh sách nhân viên ngẫu nhiên
+    const staffUsers = await prisma.user.findMany({ where: { role: 'STAFF' } });
+
+    //Lọc ra những đơn hàng chưa ghi log
+    const orderItems = await prisma.orderItem.findMany({
+      where: { isProcessTransaction: false },
+    });
+
+    // Duyệt qua danh sách đó
+    for (const orderItem of orderItems) {
+      //Check thông tin có trong kho không ?
+      const inventory = await prisma.inventory.findUnique({
+        where: {
+          productId: orderItem.productId,
+          variantId: orderItem.variantId,
+        },
+      });
+
+      if (!inventory) continue;
+
+      // 1./ Tạo 1 giao dịch theo chi tiết đơn hàng
+      const newTransaction = await prisma.inventoryTransaction.create({
+        data: {
+          type: 'EXPORT',
+          orderId: orderItem.orderId,
+          quantity: orderItem.quantity,
+          listedPrice: orderItem.listedPrice,
+          totalListedPrice: Number(orderItem.listedPrice) * orderItem.quantity,
+          productId: orderItem.productId,
+          variantId: orderItem.variantId,
+          inventoryId: inventory.id,
+          //Nhân viên xác nhận đơn
+          userId: fakerVI.helpers.arrayElement(staffUsers).id,
+          note: `Nhân viện sẽ tạo giao dịch bán hàng theo chi tiết đơn bán hàng: ${orderItem.id}`,
+        },
+      });
+
+      // 2./ Cập nhật trạng thái khi xuất hàng
+      await prisma.orderItem.update({
+        where: { id: orderItem.id },
+        data: { isProcessTransaction: true },
+      });
+
+      // 3./ Cập nhật lại số lượng trong kho
+      await prisma.inventory.update({
+        where: {
+          productId_variantId: {
+            productId: newTransaction.productId,
+            variantId: newTransaction.variantId,
+          },
+        },
+        data: {
+          quantityOnHand: {
+            decrement: newTransaction.quantity,
+          },
+          quantityAvaliable: Number(
+            inventory.quantityOnHand - newTransaction.quantity,
+          ),
+          totalCostValue: new Prisma.Decimal(inventory.averageCostPrice).mul(
+            Number(inventory.quantityOnHand - newTransaction.quantity),
+          ),
         },
       });
     }

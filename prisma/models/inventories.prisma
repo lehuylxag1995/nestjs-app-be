@@ -57,11 +57,12 @@ model InventoryTransaction {
     id                         String          @id @default(uuid())
     type                       TransactionType @default(ADJUSTMENT) // IMPORT, EXPORT, RETURN, ADJUSTMENT
     purcharsOrderId            String? //Có áp dụng theo đơn nhập ? 
-    purcharsOrderItemRecieptId String          @unique
+    purcharsOrderItemRecieptId String?         @unique
     orderId                    String? //Có áp dụng theo đơn bán ? 
     quantity                   BigInt          @default(0) // số lượng + (nhập) hoặc - (xuất)
     //Bán hàng
     listedPrice                Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là export là giá bán (giá niêm yết bao gồm thuế)
+    totalListedPrice           Decimal?        @default(0) @db.Decimal(13, 3) // Tổng bill ở Order
     //Nhập hàng
     costPrice                  Decimal?        @default(0) @db.Decimal(13, 3) // Nếu type là import là giá vốn chưa bao gồm thuế
     taxRate                    Decimal?        @default(0) @db.Decimal(5, 3) // % Thuế
@@ -79,16 +80,16 @@ model InventoryTransaction {
     createdAt DateTime @default(now())
 
     //Thông tin sản phẩm
-    Product                  Product                  @relation(fields: [productId], references: [id])
-    ProductVariant           ProductVariant           @relation(fields: [variantId], references: [id])
+    Product                  Product                   @relation(fields: [productId], references: [id])
+    ProductVariant           ProductVariant            @relation(fields: [variantId], references: [id])
     //Thông tin người chịu trách nhiệm
-    User                     User                     @relation(fields: [userId], references: [id])
+    User                     User                      @relation(fields: [userId], references: [id])
     //Thông tin liên quan Import/Export
-    PurcharsOrder            PurcharsOrder?           @relation(fields: [purcharsOrderId], references: [id])
-    PurcharsOrderItemReceipt PurchaseOrderItemReceipt @relation(fields: [purcharsOrderItemRecieptId], references: [id])
-    Order                    Order?                   @relation(fields: [orderId], references: [id])
+    PurcharsOrder            PurcharsOrder?            @relation(fields: [purcharsOrderId], references: [id])
+    PurcharsOrderItemReceipt PurchaseOrderItemReceipt? @relation(fields: [purcharsOrderItemRecieptId], references: [id])
+    Order                    Order?                    @relation(fields: [orderId], references: [id])
     //Thông tin liên quan kho
-    Inventory                Inventory                @relation(fields: [inventoryId], references: [id])
+    Inventory                Inventory                 @relation(fields: [inventoryId], references: [id])
 
     @@index([type, productId, variantId, userId, inventoryId])
     @@map("InventoryTransactions")

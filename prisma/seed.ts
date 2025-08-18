@@ -2,7 +2,11 @@ import { PrismaClient } from '@prisma/client';
 
 import { createCategories } from './seeds/categories.seed';
 import { createInventoryByProductAndVariants } from './seeds/inventories.seed';
-import { createInventoryTransactionsByPurcharsOrder } from './seeds/inventory_transactions.seed';
+import {
+  createInventoryTransactionByOrder,
+  createInventoryTransactionsByPurcharsOrder,
+} from './seeds/inventory_transactions.seed';
+import { createOrder } from './seeds/order.seed';
 import { createPricingRule } from './seeds/pricing_rule.seed';
 import { createProductImageForProducts } from './seeds/product_images.seed';
 import { createProductVariantForProducts } from './seeds/product_vartiants.seed';
@@ -34,7 +38,6 @@ async function runThongTinCoBan() {
 }
 
 async function luongNhapHang() {
-  //Luồng nhập hàng
   await createPurcharOrder();
   console.log('✅ Seed Purchars Order');
 }
@@ -45,10 +48,24 @@ async function luongImportKho() {
   console.log('✅ Seed Inventory Transaction + Invetory (Import)');
 }
 
+async function luongBanHang() {
+  await createOrder();
+  console.log('✅ Seed Order');
+}
+
+async function luongExportKho() {
+  await createInventoryTransactionByOrder();
+  console.log('✅ Seed Inventory Transaction + Invetory (Export)');
+}
+
 async function main() {
   await runThongTinCoBan();
+
   await luongNhapHang();
   await luongImportKho();
+
+  await luongBanHang();
+  await luongExportKho();
 }
 
 main()

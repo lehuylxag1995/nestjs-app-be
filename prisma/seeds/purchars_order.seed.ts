@@ -43,7 +43,7 @@ export async function createPurcharOrder() {
     //Lấy ra danh sách ngẫu nhiên sản phẩm
     const randomProducts = fakerVI.helpers.arrayElements(
       listProductAndVariants,
-      { min: 1, max: 3 },
+      { min: 1, max: listProductAndVariants.length },
     );
     //Duyệt danh sách sản phẩm vừa lấy để tạo chi tiết đơn hàng
     for (const product of randomProducts) {

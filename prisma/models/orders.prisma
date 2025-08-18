@@ -57,18 +57,16 @@ model Order {
 }
 
 model OrderItem {
-    id               String  @id @default(uuid())
-    orderId          String
-    productId        String
-    variantId        String
-    quantity         Int
-    listedPrice      Decimal @db.Decimal(13, 3) //Giá niêm yết (giá bán gồm khuyến mãi)
-    totalListedPrice Decimal @db.Decimal(13, 3) //Thành tiền giá bán
-    costPrice        Decimal @db.Decimal(13, 3) //Giá vốn tại thời điểm bán
-    totalCostPrice   Decimal @db.Decimal(13, 3) //Thành tiền giá vốn
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id                   String   @id @default(uuid())
+    orderId              String
+    productId            String
+    variantId            String
+    quantity             Int
+    listedPrice          Decimal  @db.Decimal(13, 3) //Giá niêm yết (giá bán gồm khuyến mãi)
+    totalListedPrice     Decimal  @db.Decimal(13, 3) //Thành tiền giá bán
+    isProcessTransaction Boolean  @default(false) //Check đơn hàng mới nhất
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
 
     Order           Order          @relation(fields: [orderId], references: [id])
     Product         Product        @relation(fields: [productId], references: [id])
