@@ -44,7 +44,6 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     return await this.categoriesService.remove(id);
   }

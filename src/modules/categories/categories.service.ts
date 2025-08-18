@@ -1,80 +1,89 @@
-import { PrismaService } from '@modules/prisma/prisma.service';
+import { CategoryRepository } from '@modules/categories/categories.repository';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Category } from '@prisma/client';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private categoryRepository: CategoryRepository) {}
 
-  async checkNameUnique(name: string) {
-    const data = await this.prismaService.category.findUnique({
-      where: { name },
-    });
-    if (data) return false;
-    return true;
+  async isCategoryNameAvailable(name: string) {
+    const category = await this.categoryRepository.findCategory({ name });
+    return !category; // true = available, false = duplicate
   }
 
-  async create(createCategoryDto: CreateCategoryDto) {
-    const resultNameUnique = await this.checkNameUnique(createCategoryDto.name);
+  async create(req: CreateCategoryDto): Promise<Category> {
+    const isAvailable = await this.isCategoryNameAvailable(req.name);
 
-    if (!resultNameUnique)
-      throw new BadRequestException('Tên danh mục đã tồn tại');
+    if (!isAvailable) throw new BadRequestException('Tên danh mục đã tồn tại');
 
-    return await this.prismaService.category.create({
-      data: createCategoryDto,
-    });
+    return await this.categoryRepository.create(req);
   }
 
-  async findAll() {
-    return await this.prismaService.category.findMany();
+  async findAll(): Promise<Category[]> {
+    return await this.categoryRepository.findAll();
   }
 
-  async findOne(id: string) {
-    const data = await this.prismaService.category.findUnique({
-      where: {
-        id,
-      },
-    });
+  async findOne(id: string): Promise<Category> {
+    const data = await this.categoryRepository.findCategory({ id });
 
     if (!data) throw new NotFoundException('Không tìm thấy danh mục');
 
     return data;
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+  async update(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    // 1./ Check Id có tồn tại không ?
     await this.findOne(id);
 
+    // 2./ Check parentId có tồn tại không ?
+    if (updateCategoryDto.parentId) {
+      const parentCategory = await this.categoryRepository.findCategory({
+        id: updateCategoryDto.parentId,
+      });
+
+      if (!parentCategory) {
+        throw new BadRequestException('Danh mục cha không tồn tại');
+      }
+    }
+
+    // 3./ Check không trùng tên danh mục
     if (updateCategoryDto.name) {
-      const resultNameUnique = await this.checkNameUnique(
-        updateCategoryDto.name,
-      );
-      if (resultNameUnique == false)
+      const category = await this.categoryRepository.findCategory({
+        name: updateCategoryDto.name,
+      });
+      if (category && category.id !== id)
         throw new BadRequestException('Tên danh mục đã tồn tại');
     }
 
-    return await this.prismaService.category.update({
+    // 4./ Check parentId không được là chính nó
+    if (updateCategoryDto.parentId && updateCategoryDto.parentId === id)
+      throw new BadRequestException('Danh mục không thể là cha của chính nó');
+
+    return await this.categoryRepository.update({
       where: { id },
       data: updateCategoryDto,
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<Category> {
     await this.findOne(id);
 
-    await this.prismaService.category.delete({
-      where: { id },
-    });
+    return await this.categoryRepository.delete({ id });
   }
 
-  async changePublished(id: string, published: boolean) {
+  async changePublished(id: string, published: boolean): Promise<Category> {
     await this.findOne(id);
 
-    return await this.prismaService.category.update({
+    return await this.categoryRepository.update({
       where: { id },
       data: {
         published,
