@@ -1,12 +1,12 @@
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Category, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CategoryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.CategoryCreateInput): Promise<Category> {
+  async create(data: Prisma.CategoryCreateInput) {
     return this.prisma.category.create({
       data,
     });
@@ -15,7 +15,7 @@ export class CategoryRepository {
   async update(params: {
     where: Prisma.CategoryWhereUniqueInput;
     data: Prisma.CategoryUpdateInput;
-  }): Promise<Category> {
+  }) {
     const { where, data } = params;
     return this.prisma.category.update({
       where,
@@ -23,19 +23,21 @@ export class CategoryRepository {
     });
   }
 
-  async delete(where: Prisma.CategoryWhereUniqueInput): Promise<Category> {
+  async delete(where: Prisma.CategoryWhereUniqueInput) {
     return this.prisma.category.delete({
       where,
     });
   }
 
-  async findCategory(
-    where: Prisma.CategoryWhereUniqueInput,
-  ): Promise<Category | null> {
+  async findCategory(where: Prisma.CategoryWhereUniqueInput) {
     return this.prisma.category.findUnique({ where });
   }
 
-  async findAll(): Promise<Category[]> {
-    return this.prisma.category.findMany();
+  async findAll(params: Prisma.CategoryFindManyArgs) {
+    return this.prisma.category.findMany(params);
+  }
+
+  async count(where: Prisma.CategoryWhereInput) {
+    return await this.prisma.category.count({ where });
   }
 }

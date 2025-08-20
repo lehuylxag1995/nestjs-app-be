@@ -9,7 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Bỏ qua các DTO không validation
-      transform: true, // Auto chuyển đổi string(mặc định) -> int(controller)
+      transform: true, // bật chức năng auto. Nhưng cần khai báo rõ @Type() trong DTO
     }),
   );
   await app.listen(process.env.PORT ?? 3000);

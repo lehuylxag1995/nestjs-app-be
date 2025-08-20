@@ -1,16 +1,21 @@
 import { CategoryRepository } from '@modules/categories/categories.repository';
+import { PaginationCategoryDto } from '@modules/categories/dto/pagination-category.dto';
+import { PrismaService } from '@modules/prisma/prisma.service';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Category } from '@prisma/client';
+import { Category, Prisma } from '@prisma/client';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(
+    private readonly categoryRepository: CategoryRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async isCategoryNameAvailable(name: string) {
     const category = await this.categoryRepository.findCategory({ name });
@@ -25,8 +30,34 @@ export class CategoriesService {
     return await this.categoryRepository.create(req);
   }
 
-  async findAll(): Promise<Category[]> {
-    return await this.categoryRepository.findAll();
+  async findAll(req: PaginationCategoryDto) {
+    const { page, pageSize, keyword } = req;
+
+    const where: Prisma.CategoryWhereInput = keyword
+      ? {
+          name: { contains: keyword, mode: 'insensitive' },
+        }
+      : {};
+
+    const [data, totalItems] = await this.prisma.$transaction([
+      this.prisma.category.findMany({
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        where,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.category.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Category> {

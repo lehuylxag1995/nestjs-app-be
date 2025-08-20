@@ -1,3 +1,4 @@
+import { PaginationCategoryDto } from '@modules/categories/dto/pagination-category.dto';
 import {
   Body,
   Controller,
@@ -10,6 +11,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -26,8 +28,8 @@ export class CategoriesController {
   }
 
   @Get()
-  async findAll() {
-    return await this.categoriesService.findAll();
+  async findAll(@Query() pagination: PaginationCategoryDto) {
+    return await this.categoriesService.findAll(pagination);
   }
 
   @Get(':id')
