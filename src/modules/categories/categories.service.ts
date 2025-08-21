@@ -1,4 +1,3 @@
-import { CategoryRepository } from '@modules/categories/categories.repository';
 import { PaginationCategoryDto } from '@modules/categories/dto/pagination-category.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import {
@@ -12,13 +11,10 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(
-    private readonly categoryRepository: CategoryRepository,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async isCategoryNameAvailable(name: string) {
-    const category = await this.categoryRepository.findCategory({ name });
+    const category = await this.prisma.category.findUnique({ where: { name } });
     return !category; // true = available, false = duplicate
   }
 
@@ -27,7 +23,7 @@ export class CategoriesService {
 
     if (!isAvailable) throw new BadRequestException('Tên danh mục đã tồn tại');
 
-    return await this.categoryRepository.create(req);
+    return await this.prisma.category.create({ data: req });
   }
 
   async findAll(req: PaginationCategoryDto) {
@@ -61,7 +57,7 @@ export class CategoriesService {
   }
 
   async findOne(id: string): Promise<Category> {
-    const data = await this.categoryRepository.findCategory({ id });
+    const data = await this.prisma.category.findUnique({ where: { id } });
 
     if (!data) throw new NotFoundException('Không tìm thấy danh mục');
 
@@ -77,8 +73,8 @@ export class CategoriesService {
 
     // 2./ Check parentId có tồn tại không ?
     if (updateCategoryDto.parentId) {
-      const parentCategory = await this.categoryRepository.findCategory({
-        id: updateCategoryDto.parentId,
+      const parentCategory = await this.prisma.category.findUnique({
+        where: { id: updateCategoryDto.parentId },
       });
 
       if (!parentCategory) {
@@ -88,8 +84,8 @@ export class CategoriesService {
 
     // 3./ Check không trùng tên danh mục
     if (updateCategoryDto.name) {
-      const category = await this.categoryRepository.findCategory({
-        name: updateCategoryDto.name,
+      const category = await this.prisma.category.findUnique({
+        where: { name: updateCategoryDto.name },
       });
       if (category && category.id !== id)
         throw new BadRequestException('Tên danh mục đã tồn tại');
@@ -99,7 +95,7 @@ export class CategoriesService {
     if (updateCategoryDto.parentId && updateCategoryDto.parentId === id)
       throw new BadRequestException('Danh mục không thể là cha của chính nó');
 
-    return await this.categoryRepository.update({
+    return await this.prisma.category.update({
       where: { id },
       data: updateCategoryDto,
     });
@@ -108,13 +104,13 @@ export class CategoriesService {
   async remove(id: string): Promise<Category> {
     await this.findOne(id);
 
-    return await this.categoryRepository.delete({ id });
+    return await this.prisma.category.delete({ where: { id } });
   }
 
   async changePublished(id: string, published: boolean): Promise<Category> {
     await this.findOne(id);
 
-    return await this.categoryRepository.update({
+    return await this.prisma.category.update({
       where: { id },
       data: {
         published,

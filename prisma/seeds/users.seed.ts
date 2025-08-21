@@ -9,16 +9,16 @@ export async function createUsers(
   countStaff: number,
   countAdmin: number,
 ) {
-  //Password hash
-  const saltOrRounds = 10;
-  const password = '123456';
-  const hash = await bcrypt.hash(password, saltOrRounds);
-
   async function createUserByRole(
     count: number,
     role: 'CUSTOMER' | 'STAFF' | 'ADMIN',
   ) {
     for (let index = 0; index < count; index++) {
+      //Password hash
+      const saltOrRounds = 10;
+      const password = '123456';
+      const hash = await bcrypt.hash(password, saltOrRounds);
+
       await prisma.user.create({
         data: {
           address: fakerVI.location.streetAddress(),
