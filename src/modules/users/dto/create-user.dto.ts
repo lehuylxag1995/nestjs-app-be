@@ -30,6 +30,10 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Bạn chưa nhập số điện thoại' })
   phone: string;
 
+  @IsString({ message: 'Tài khoản phải là kiểu chuỗi' })
+  @IsNotEmpty({ message: 'Bạn chưa nhập tài khoản' })
+  username: string;
+
   @IsStrongPassword(
     {
       minLength: 8,

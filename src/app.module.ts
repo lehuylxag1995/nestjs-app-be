@@ -1,3 +1,4 @@
+import { AuthModule } from '@modules/auth/auth.module';
 import { PrismaModule } from '@modules/prisma/prisma.module';
 import { ImagesModule } from '@modules/upload/images/images.module';
 import { Module } from '@nestjs/common';
@@ -17,8 +18,8 @@ import { UsersModule } from './modules/users/users.module';
     ImagesModule,
     ProductVariantsModule,
     OrdersModule,
-
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

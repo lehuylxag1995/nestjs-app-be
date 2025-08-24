@@ -16,15 +16,16 @@ export async function createUsers(
     for (let index = 0; index < count; index++) {
       //Password hash
       const saltOrRounds = 10;
-      const password = '123456';
+      const password = '123123aA!';
       const hash = await bcrypt.hash(password, saltOrRounds);
-
+      const name = `${fakerVI.person.fullName()}_${fakerVI.string.alphanumeric(5)}`;
       await prisma.user.create({
         data: {
           address: fakerVI.location.streetAddress(),
           email: fakerVI.internet.email({ provider: 'gmail.com' }),
-          name: `${fakerVI.person.fullName()}_${fakerVI.string.alphanumeric(5)}`,
+          name,
           phone: fakerVI.phone.number(),
+          username: name + fakerVI.string.alphanumeric(5),
           password: hash,
           CCCD: fakerVI.string.numeric(12),
           isActive: fakerVI.datatype.boolean({ probability: 0.9 }),

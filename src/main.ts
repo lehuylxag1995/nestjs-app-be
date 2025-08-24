@@ -8,6 +8,7 @@ async function bootstrap() {
   //Setup validation auto
   app.useGlobalPipes(
     new ValidationPipe({
+      stopAtFirstError: true,
       whitelist: true, // Bỏ qua các DTO không validation
       transform: true, // bật chức năng auto. Nhưng cần khai báo rõ @Type() trong DTO
     }),

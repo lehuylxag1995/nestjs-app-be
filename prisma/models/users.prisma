@@ -10,6 +10,7 @@ model User {
     name     String  @unique
     email    String  @unique
     phone    String  @unique
+    username String  @unique
     password String
     address  String  @unique
     CCCD     String? @unique
