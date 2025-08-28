@@ -12,14 +12,14 @@ import { createProductImageForProducts } from './seeds/product_images.seed';
 import { createProductVariantForProducts } from './seeds/product_vartiants.seed';
 import { createProductForLeafCategories } from './seeds/products.seed';
 import { createPurcharOrder } from './seeds/purchars_order.seed';
+import { createRoleAndPermission } from './seeds/role.seed';
 import { createSupplier } from './seeds/suppliers.seed';
-import { createUsers } from './seeds/users.seed';
 
 const prisma = new PrismaClient();
 
 async function runThongTinCoBan() {
   //Luồng thông tin cơ bản
-  await createUsers(50, 5, 2);
+  await createRoleAndPermission();
   console.log('✅ Seed User');
   await createSupplier(20);
   console.log('✅ Seed Supplier');
@@ -59,6 +59,7 @@ async function luongExportKho() {
 }
 
 async function main() {
+  console.log('🚀 Start seeding...');
   await runThongTinCoBan();
 
   await luongNhapHang();

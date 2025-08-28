@@ -4,10 +4,13 @@ const prisma = new PrismaClient();
 
 //Tạo hình ảnh theo sản phẩm
 export async function createProductImageForProducts(min, max) {
+  const role = await prisma.role.findUnique({
+    where: { name: 'CUSTOMER' },
+  });
   // Nhân viên tạo
   const listUserId = await prisma.user.findMany({
     select: { id: true },
-    where: { role: 'STAFF' },
+    where: { roleId: role?.id },
   });
 
   const allProducts = await prisma.product.findMany();

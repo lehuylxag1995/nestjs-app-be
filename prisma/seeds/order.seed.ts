@@ -4,9 +4,12 @@ const prisma = new PrismaClient();
 
 export async function createOrder() {
   await prisma.$transaction(async (prisma) => {
+    const roleStaff = await prisma.role.findUnique({
+      where: { name: 'CUSTOMER' },
+    });
     //Danh sách khách hàng
     const listCustomer = await prisma.user.findMany({
-      where: { role: 'CUSTOMER' },
+      where: { roleId: roleStaff?.id },
     });
 
     //Danh sách sản phẩm trong kho khách sẽ lựa

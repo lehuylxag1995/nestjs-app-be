@@ -8,10 +8,14 @@ export async function createPurcharOrder() {
     const listSupplierId = await prisma.supplier.findMany({
       select: { id: true },
     });
+
+    const roleStaff = await prisma.role.findUnique({
+      where: { name: 'CUSTOMER' },
+    });
     // Nhân viên tạo
     const listUserId = await prisma.user.findMany({
       select: { id: true },
-      where: { role: 'STAFF' },
+      where: { roleId: roleStaff?.id },
     });
     //Lấy danh sách products và variants
     const listProductAndVariants = await prisma.product.findMany({

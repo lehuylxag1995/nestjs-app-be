@@ -2,7 +2,7 @@ import { PrismaService } from '@modules/prisma/prisma.service';
 import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
 import { UserRole } from '@modules/users/types/user.type';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -211,5 +211,17 @@ export class UsersService {
         }
       }
     }
+  }
+
+  async findUserRoleById(id: string): Promise<Pick<User, 'id' | 'role'>> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+    if (!user) throw new BadRequestException('Không tìm thấy tài khoản');
+    return user;
   }
 }

@@ -1,0 +1,71 @@
+enum PermissionActions {
+    read
+    create
+    update
+    delete
+    manage
+}
+
+enum PermissionSubjects {
+    User
+
+    Supplier
+
+    Category
+    Product
+    ProductVariant
+    Image
+    File
+
+    Order
+    OrderItem
+
+    PurcharsOrder
+    PurcharsOrderItem
+    PurchaseOrderItemReceipt
+
+    InventoryTransaction
+    Inventory
+}
+
+enum RolesName {
+    STAFF
+    ADMIN
+    CUSTOMER
+}
+
+model Role {
+    id          String               @id @default(uuid())
+    name        RolesName            @unique
+    Permissions PermissionsOnRoles[]
+    User        User[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Permission {
+    id         String               @id @default(uuid())
+    actions    PermissionActions // "read", "create", "update", "delete","manage"
+    subjects   PermissionSubjects // "User", "Category", "Order",...
+    allowed    Boolean              @default(false) // true = can , false = cannot
+    fields     String[] // Danh sách field áp dụng, ví dụ ["email", "password"]
+    conditions Json? // { "userId": "${user.id}" } hoặc { "status": "ACTIVE" }
+    Roles      PermissionsOnRoles[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model PermissionsOnRoles {
+    roleId       String
+    permissionId String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    Permission Permission @relation(fields: [permissionId], references: [id])
+    Role       Role       @relation(fields: [roleId], references: [id])
+
+    @@id([roleId, permissionId])
+}

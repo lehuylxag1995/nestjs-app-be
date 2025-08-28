@@ -9,6 +9,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ProductVariantsModule } from './modules/product-variants/product-variants.module';
 import { ProductsModule } from './modules/products/products.module';
 import { UsersModule } from './modules/users/users.module';
+import { CaslModule } from './modules/casl/casl.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from './modules/users/users.module';
     OrdersModule,
     UsersModule,
     AuthModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

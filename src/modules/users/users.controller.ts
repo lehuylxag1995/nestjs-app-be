@@ -1,9 +1,12 @@
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { CaslAbilityFactory } from '@modules/casl/casl-ability.factory';
 import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
 import { UserRole } from '@modules/users/types/user.type';
 import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -15,6 +18,8 @@ import {
   Post,
   Put,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -22,11 +27,22 @@ import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly caslAbilityFactory: CaslAbilityFactory,
+  ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Req() req, @Body() createUserDto: CreateUserDto) {
+    const user = await this.usersService.findUserRoleById(req.user.id);
+
+    const ability = await this.caslAbilityFactory.createForUser(user);
+
+    if (!ability.can('create', 'User'))
+      throw new ForbiddenException('Bạn không có quyền');
+
     return this.usersService.create(createUserDto);
   }
 

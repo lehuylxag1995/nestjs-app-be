@@ -1,9 +1,3 @@
-enum Role {
-    ADMIN // CRUD tất cả
-    STAFF // quản lý kho, phiếu nhập, xuất, snapshot
-    CUSTOMER // đặt hàng
-}
-
 model User {
     id       String  @id @default(uuid())
     //Thông tin định danh chung
@@ -15,10 +9,12 @@ model User {
     address  String  @unique
     CCCD     String? @unique
     isActive Boolean @default(true)
-    role     Role    @default(CUSTOMER)
+    roleId   String
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    Role Role @relation(fields: [roleId], references: [id])
 
     // Nhân viên và khách hàng
     Images Image[]

@@ -131,8 +131,14 @@ export async function createInventoryTransactionsByPurcharsOrder() {
 // Tạo biến động giao dịch bán hàng (xuất hàng)
 export async function createInventoryTransactionByOrder() {
   await prisma.$transaction(async (prisma) => {
+    const roleStaff = await prisma.role.findUnique({
+      where: { name: 'STAFF' },
+    });
+
     //Danh sách nhân viên ngẫu nhiên
-    const staffUsers = await prisma.user.findMany({ where: { role: 'STAFF' } });
+    const staffUsers = await prisma.user.findMany({
+      where: { roleId: roleStaff?.id },
+    });
 
     //Lọc ra những đơn hàng chưa ghi log
     const orderItems = await prisma.orderItem.findMany({
