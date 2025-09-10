@@ -1,18 +1,13 @@
-import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
-import { CaslAbilityFactory } from '@modules/casl/casl-ability.factory';
 import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
-import { UserRole } from '@modules/users/types/user.type';
 import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   ParseBoolPipe,
-  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -21,39 +16,38 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+
+import { CheckPolicies } from '@decorators/check-policy.decorator';
+import { PoliciesGuard } from '@guards/policy.guard';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { Action } from '@modules/casl/casl-ability.factory';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly caslAbilityFactory: CaslAbilityFactory,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(@Req() req, @Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.findUserRoleById(req.user.id);
-
-    const ability = await this.caslAbilityFactory.createForUser(user);
-
-    if (!ability.can('create', 'User'))
-      throw new ForbiddenException('Bạn không có quyền');
-
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  findAll(@Query() params: PaginationUserDto) {
-    return this.usersService.findAll(params);
+  @UseGuards(PoliciesGuard) // Tạo chính sách của user đăng nhập
+  @CheckPolicies((ability) => ability.can(Action.Read, 'User')) // Tạo điều kiện cho phép
+  findAll(@Query() params: PaginationUserDto, @Req() req) {
+    return this.usersService.findAll(params, req.user);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findOne(id);
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Read, 'User'))
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    const user = await this.usersService.findOne(id);
   }
 
   @Put(':id')
@@ -80,13 +74,13 @@ export class UsersController {
     return this.usersService.updateActive(id, isActive);
   }
 
-  @Patch(':id/Role/:role')
-  updateRole(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('role', new ParseEnumPipe(UserRole)) role: UserRole,
-  ) {
-    return this.usersService.updateRole(id, role);
-  }
+  // @Patch(':id/Role/:role')
+  // updateRole(
+  //   @Param('id', ParseUUIDPipe) id: string,
+  //   @Param('role', new ParseEnumPipe(UserRole)) role: UserRole,
+  // ) {
+  //   return this.usersService.updateRole(id, role);
+  // }
 
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {

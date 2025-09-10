@@ -13,7 +13,10 @@
     "paths": {
       "@modules/*": ["src/modules/*"],
       "@pipes/*": ["src/pipes/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@guards/*": ["src/guards/*"],
+      "@decorators/*": ["src/decorators/*"],
+      "@ultis/*": ["src/utils/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

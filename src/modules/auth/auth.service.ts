@@ -24,7 +24,7 @@ export class AuthService {
 
   //6./ Hàm này nhận result của validateUser và tạo jwt
   async login(user: any) {
-    const payload = { name: user.name, id: user.id };
+    const payload = { name: user.name, id: user.id, roleId: user.roleId };
     return {
       access_token: this.jwtService.sign(payload),
     };

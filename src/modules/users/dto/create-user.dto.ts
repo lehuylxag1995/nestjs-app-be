@@ -58,4 +58,7 @@ export class CreateUserDto {
   @Matches(/^[0-9]{12}$/, { message: 'CCCD phải đủ 12 ký tự và là ký tự số' })
   @IsOptional()
   CCCD: string;
+
+  @IsOptional()
+  roleId: string;
 }

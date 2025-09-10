@@ -8,22 +8,17 @@ enum PermissionActions {
 
 enum PermissionSubjects {
     User
-
     Supplier
-
     Category
     Product
     ProductVariant
     Image
     File
-
     Order
     OrderItem
-
     PurcharsOrder
     PurcharsOrderItem
     PurchaseOrderItemReceipt
-
     InventoryTransaction
     Inventory
 }
@@ -34,6 +29,7 @@ enum RolesName {
     CUSTOMER
 }
 
+// Tạo các vai trò
 model Role {
     id          String               @id @default(uuid())
     name        RolesName            @unique
@@ -44,11 +40,14 @@ model Role {
     updatedAt DateTime @updatedAt
 }
 
+// allowed = true: Cho phép rõ ràng
+// allowed = false: Cấm rõ ràng (override)
+// Không có permission: Cấm mặc định (default deny)
 model Permission {
     id         String               @id @default(uuid())
     actions    PermissionActions // "read", "create", "update", "delete","manage"
     subjects   PermissionSubjects // "User", "Category", "Order",...
-    allowed    Boolean              @default(false) // true = can , false = cannot
+    allowed    Boolean              @default(true) // true = can , false = cannot
     fields     String[] // Danh sách field áp dụng, ví dụ ["email", "password"]
     conditions Json? // { "userId": "${user.id}" } hoặc { "status": "ACTIVE" }
     Roles      PermissionsOnRoles[]
@@ -57,6 +56,7 @@ model Permission {
     updatedAt DateTime @updatedAt
 }
 
+// Gán quyền cho vai trò
 model PermissionsOnRoles {
     roleId       String
     permissionId String

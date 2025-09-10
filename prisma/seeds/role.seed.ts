@@ -150,7 +150,7 @@ export async function createRoleAndPermission() {
           subjects: PermissionSubjects.User,
           allowed: true,
           fields: ['id', 'email', 'name', 'phone', 'address'],
-          conditions: { userId: '${user.id}' }, // Chỉ được xem thông tin của chính mình
+          conditions: { id: '${user.id}' }, // Chỉ được xem thông tin của chính mình
         },
       }),
     );
@@ -162,7 +162,7 @@ export async function createRoleAndPermission() {
           subjects: PermissionSubjects.User,
           allowed: true,
           fields: ['name', 'phone', 'address'], // Không được đổi email
-          conditions: { userId: '${user.id}' },
+          conditions: { id: '${user.id}' },
         },
       }),
     );
@@ -276,7 +276,7 @@ export async function createRoleAndPermission() {
 
     // Tạo User với roleId
     createUserByRole(2, roleAdmin.id);
-    createUserByRole(5, roleCustomer.id);
-    createUserByRole(50, roleStaff.id);
+    createUserByRole(5, roleStaff.id);
+    createUserByRole(50, roleCustomer.id);
   });
 }

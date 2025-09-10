@@ -1,15 +1,22 @@
+import { permittedFieldsOf } from '@casl/ability/extra';
+import { accessibleBy } from '@casl/prisma';
+import { Action, CaslAbilityFactory } from '@modules/casl/casl-ability.factory';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
-import { UserRole } from '@modules/users/types/user.type';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { createPrismaSelect } from '@ultis/casl-prisma.helper';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+
 @Injectable()
 export class UsersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private caslAbilityFactory: CaslAbilityFactory,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -23,7 +30,6 @@ export class UsersService {
           createdAt: true,
           updatedAt: true,
           isActive: true,
-          role: true,
           password: true,
         },
       });
@@ -36,10 +42,21 @@ export class UsersService {
     }
   }
 
-  async findAll(paginationUserDto: PaginationUserDto) {
-    const { page, pageSize, keyword } = paginationUserDto;
+  async findAll(paginationUserDto: PaginationUserDto, user: any) {
+    const userWithRole = await this.findUserWithPermissionOnRole(user.id);
+    // Where theo casl
+    const ability = this.caslAbilityFactory.createForUser(userWithRole);
+    const caslWhere = accessibleBy(ability).User;
 
-    const where: Prisma.UserWhereInput = keyword
+    // Select theo casl
+    const allowedFields = permittedFieldsOf(ability, Action.Read, 'User', {
+      fieldsFrom: (rule) =>
+        rule.fields || Object.keys(Prisma.UserScalarFieldEnum),
+    });
+    const selectFields = createPrismaSelect<User>(allowedFields);
+
+    const { page, pageSize, keyword } = paginationUserDto;
+    const searchWhere: Prisma.UserWhereInput = keyword
       ? {
           OR: [
             { name: { contains: keyword, mode: 'insensitive' } },
@@ -49,20 +66,19 @@ export class UsersService {
           ],
         }
       : {};
+
+    const finalWhere: Prisma.UserWhereInput = {
+      AND: [caslWhere, searchWhere],
+    };
+
     const [data, totalItems] = await this.prismaService.$transaction([
       this.prismaService.user.findMany({
         skip: (page - 1) * pageSize,
         take: pageSize,
-        where,
-        omit: {
-          createdAt: true,
-          updatedAt: true,
-          isActive: true,
-          role: true,
-          password: true,
-        },
+        where: finalWhere,
+        select: selectFields,
       }),
-      this.prismaService.user.count({ where }),
+      this.prismaService.user.count({ where: finalWhere }),
     ]);
 
     return {
@@ -83,7 +99,6 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         isActive: true,
-        role: true,
         password: true,
       },
     });
@@ -98,6 +113,7 @@ export class UsersService {
         id: true,
         name: true,
         password: true,
+        roleId: true,
       },
     });
 
@@ -121,7 +137,7 @@ export class UsersService {
           createdAt: true,
           updatedAt: true,
           isActive: true,
-          role: true,
+          roleId: true,
           password: true,
         },
       });
@@ -143,7 +159,7 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         isActive: true,
-        role: true,
+        roleId: true,
         password: true,
       },
     });
@@ -158,7 +174,7 @@ export class UsersService {
           createdAt: true,
           updatedAt: true,
           isActive: true,
-          role: true,
+          roleId: true,
           password: true,
         },
       });
@@ -179,7 +195,7 @@ export class UsersService {
         omit: {
           createdAt: true,
           updatedAt: true,
-          role: true,
+          roleId: true,
           password: true,
         },
       });
@@ -192,36 +208,54 @@ export class UsersService {
     }
   }
 
-  async updateRole(id: string, role: UserRole) {
-    try {
-      return await this.prismaService.user.update({
-        where: { id },
-        data: { role },
-        omit: {
-          createdAt: true,
-          updatedAt: true,
-          isActive: true,
-          password: true,
-        },
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
-        }
-      }
-    }
-  }
+  // async updateRole(id: string, role: UserRole) {
+  //   try {
+  //     return await this.prismaService.user.update({
+  //       where: { id },
+  //       data: { role },
+  //       omit: {
+  //         createdAt: true,
+  //         updatedAt: true,
+  //         isActive: true,
+  //         password: true,
+  //       },
+  //     });
+  //   } catch (error) {
+  //     if (error instanceof PrismaClientKnownRequestError) {
+  //       if (error.code === 'P2002') {
+  //         throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
+  //       }
+  //     }
+  //   }
+  // }
 
-  async findUserRoleById(id: string): Promise<Pick<User, 'id' | 'role'>> {
+  async findUserWithPermissionOnRole(userId: string) {
     const user = await this.prismaService.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        role: true,
+      where: { id: userId },
+      include: {
+        Role: {
+          include: {
+            Permissions: {
+              include: { Permission: true },
+            },
+          },
+        },
       },
     });
-    if (!user) throw new BadRequestException('Không tìm thấy tài khoản');
+    if (!user) throw new BadRequestException('Không tìm thấy tài khoản !');
+
     return user;
   }
+
+  // async findAllAccessible(
+  //   paginationUserDto: PaginationUserDto,
+  //   user: UserPermissionOnRole,
+  // ) {
+  //   const userWithRole = await this.findUserWithPermissionOnRole(user.id);
+  //   const ability = this.caslAbilityFactory.createForUser(userWithRole);
+
+  //   return this.prismaService.user.findMany({
+  //     where: accessibleBy(ability, Action.Read).User,
+  //   });
+  // }
 }
