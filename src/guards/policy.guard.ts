@@ -45,6 +45,7 @@ export class PoliciesGuard implements CanActivate {
 
     // Theo CASL phải khởi tạo ability cho người dùng đó
     const ability = this.caslAbilityFactory.createForUser(user);
+    req.ability = ability;
 
     // Dùng every (all true) thì mới return true (cho phép), còn false (cấm)
     return policyHandlers.every(

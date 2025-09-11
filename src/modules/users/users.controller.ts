@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -18,15 +19,17 @@ import {
 } from '@nestjs/common';
 
 import { CheckPolicies } from '@decorators/check-policy.decorator';
+import { GetUser } from '@decorators/get-user.decorator';
 import { PoliciesGuard } from '@guards/policy.guard';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { Action } from '@modules/casl/casl-ability.factory';
+import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PoliciesGuard) // PoliciesGuard: Tạo ability theo DB
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -37,17 +40,27 @@ export class UsersController {
   }
 
   @Get()
-  @UseGuards(PoliciesGuard) // Tạo chính sách của user đăng nhập
   @CheckPolicies((ability) => ability.can(Action.Read, 'User')) // Tạo điều kiện cho phép
   findAll(@Query() params: PaginationUserDto, @Req() req) {
     return this.usersService.findAll(params, req.user);
   }
 
   @Get(':id')
-  @UseGuards(PoliciesGuard)
   @CheckPolicies((ability) => ability.can(Action.Read, 'User'))
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() currentUser: User, // Lấy user hiện tại từ JWT token
+  ) {
+    // Kiểm tra xem id được ysêu cầu có phải là của user hiện tại không
+    if (id !== currentUser.id) {
+      throw new ForbiddenException(
+        'Bạn chỉ có thể truy cập thông tin của chính mình',
+      );
+    }
+
     const user = await this.usersService.findOne(id);
+
+    return user;
   }
 
   @Put(':id')
