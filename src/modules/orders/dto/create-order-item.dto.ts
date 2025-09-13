@@ -1,5 +1,5 @@
 import { IsInt, IsNotEmpty, IsUUID, Min } from 'class-validator';
-import { IsDecimalCustom } from 'src/constraint/IsDeciaml.constraint';
+import { IsDecimalCustom } from 'src/common/constraint/IsDeciaml.constraint';
 
 export class CreateOrderItemDto {
   @Min(1, { message: 'Số lượng tối thiểu là 1' })

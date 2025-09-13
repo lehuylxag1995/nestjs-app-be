@@ -1,12 +1,12 @@
-import { CaslModule } from '@modules/casl/casl.module';
-import { PermissionModule } from '@modules/permission/permission.module';
-import { PrismaModule } from '@modules/prisma/prisma.module';
+import { CaslModule } from '@Modules/casl/casl.module';
+import { PrismaModule } from '@Modules/prisma/prisma.module';
+import { RolesModule } from '@Modules/roles/roles.module';
 import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 @Module({
-  imports: [PrismaModule, CaslModule, PermissionModule],
+  imports: [PrismaModule, CaslModule, RolesModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

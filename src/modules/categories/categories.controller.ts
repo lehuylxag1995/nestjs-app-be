@@ -1,4 +1,4 @@
-import { PaginationCategoryDto } from '@modules/categories/dto/pagination-category.dto';
+import { PaginationCategoryDto } from '@Modules/categories/dto/pagination-category.dto';
 import {
   Body,
   Controller,

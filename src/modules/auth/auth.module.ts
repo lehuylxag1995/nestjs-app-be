@@ -1,8 +1,9 @@
-import { jwtConstands } from '@modules/auth/constands';
-import { jwtStrategy } from '@modules/auth/strategies/jwt.strategy';
-import { LocalStrategy } from '@modules/auth/strategies/local.strategy';
-import { UsersModule } from '@modules/users/users.module';
+import { jwtStrategy } from '@Modules/auth/strategies/jwt.strategy';
+import { LocalStrategy } from '@Modules/auth/strategies/local.strategy';
+import { TokenModule } from '@Modules/token/token.module';
+import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
@@ -12,9 +13,16 @@ import { AuthService } from './auth.service';
   imports: [
     UsersModule,
     PassportModule,
-    JwtModule.register({
-      secret: jwtConstands.secret,
-      signOptions: { expiresIn: '1000000s' },
+    TokenModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: '15m', // chỉ set cho access token
+        },
+      }),
     }),
   ],
   controllers: [AuthController],

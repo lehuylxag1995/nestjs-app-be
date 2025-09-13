@@ -1,4 +1,4 @@
-import { PrismaService } from '@modules/prisma/prisma.service';
+import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';

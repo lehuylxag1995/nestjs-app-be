@@ -1,4 +1,4 @@
-import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
+import { PaginationUserDto } from '@Modules/users/dto/pagination-user.dto';
 import {
   Body,
   Controller,
@@ -18,12 +18,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CheckPolicies } from '@decorators/check-policy.decorator';
-import { GetUser } from '@decorators/get-user.decorator';
-import { PoliciesGuard } from '@guards/policy.guard';
-import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
-import { Action } from '@modules/casl/casl-ability.factory';
+import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
+import { Action } from '@Modules/casl/casl-ability.factory';
 import { User } from '@prisma/client';
+import { CheckPolicies } from 'src/common/decorators/check-policy.decorator';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { PoliciesGuard } from 'src/common/guards/policy.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -34,8 +34,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @CheckPolicies((ability) => ability.can(Action.Create, 'User'))
   @HttpCode(HttpStatus.CREATED)
-  async create(@Req() req, @Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 

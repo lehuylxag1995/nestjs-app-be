@@ -1,12 +1,8 @@
 import {
-  CHECK_POLICIES_KEY,
-  PolicyHandler,
-} from '@decorators/check-policy.decorator';
-import {
   AppAbility,
   CaslAbilityFactory,
-} from '@modules/casl/casl-ability.factory';
-import { UsersService } from '@modules/users/users.service';
+} from '@Modules/casl/casl-ability.factory';
+import { UsersService } from '@Modules/users/users.service';
 import {
   CanActivate,
   ExecutionContext,
@@ -14,6 +10,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import {
+  CHECK_POLICIES_KEY,
+  PolicyHandler,
+} from 'src/common/decorators/check-policy.decorator';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {

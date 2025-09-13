@@ -1,36 +1,45 @@
 import { permittedFieldsOf } from '@casl/ability/extra';
 import { accessibleBy } from '@casl/prisma';
-import { Action, CaslAbilityFactory } from '@modules/casl/casl-ability.factory';
-import { PrismaService } from '@modules/prisma/prisma.service';
-import { PaginationUserDto } from '@modules/users/dto/pagination-user.dto';
+import { Action, CaslAbilityFactory } from '@Modules/casl/casl-ability.factory';
+import { PrismaService } from '@Modules/prisma/prisma.service';
+import { RolesService } from '@Modules/roles/roles.service';
+import { PaginationUserDto } from '@Modules/users/dto/pagination-user.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { createPrismaSelect } from '@ultis/casl-prisma.helper';
 import * as bcrypt from 'bcrypt';
+import { createPrismaSelect } from 'src/common/utils/casl-prisma.helper';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
-    private readonly prismaService: PrismaService,
-    private caslAbilityFactory: CaslAbilityFactory,
+    private readonly roleService: RolesService,
+    private readonly prismaService: PrismaService, // readonly chỉ để dùng không được gán lại.
+    private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
     try {
+      // Tìm role mặc định là customer cho tài khoản
+      const roleCustomer = await this.roleService.findRoleByName('CUSTOMER');
+      createUserDto.roleId = roleCustomer.id;
+
+      // Tạo mật khẩu cho tài khoản
       const saltOrRounds = 10;
       const hash = await bcrypt.hash(createUserDto.password, saltOrRounds);
       createUserDto.password = hash;
 
+      // Tạo tài khoản
       return await this.prismaService.user.create({
         data: createUserDto,
         omit: {
-          createdAt: true,
-          updatedAt: true,
-          isActive: true,
+          username: true,
           password: true,
+          isActive: true,
+          updatedAt: true,
+          createdAt: true,
         },
       });
     } catch (error) {
@@ -38,7 +47,7 @@ export class UsersService {
         if (error.code === 'P2002') {
           throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
         }
-      }
+      } else console.error(error);
     }
   }
 

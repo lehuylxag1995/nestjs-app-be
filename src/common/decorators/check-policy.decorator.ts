@@ -1,4 +1,4 @@
-import { AppAbility } from '@modules/casl/casl-ability.factory';
+import { AppAbility } from '@Modules/casl/casl-ability.factory';
 import { SetMetadata } from '@nestjs/common';
 
 export interface IPolicyHandler {

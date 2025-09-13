@@ -1,6 +1,5 @@
-import { PrismaService } from '@modules/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
-import { PermissionActions, PermissionSubjects } from '@prisma/client';
+import { PrismaService } from '@Modules/prisma/prisma.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 
@@ -8,53 +7,31 @@ import { UpdatePermissionDto } from './dto/update-permission.dto';
 export class PermissionService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findPermissionOnRole(
-    roleId: string, // Role của user hiện tại
-    action: string, // 'read', 'create', 'update', 'delete', 'manage'
-    subject: string, // 'User',...
-    context?: { userId?: string; targetId?: string },
-  ) {
-    const permission = await this.prismaService.permissionsOnRoles.findFirst({
-      where: {
-        roleId,
-        Permission: {
-          actions: action as PermissionActions,
-          subjects: subject as PermissionSubjects,
-        },
-      },
+  async findAll() {
+    return `This action returns all permission`;
+  }
+
+  async findOne(id: string) {
+    const permission = await this.prismaService.permission.findUnique({
+      where: { id },
+    });
+    if (!permission) throw new BadRequestException('Không tìm thấy quyền !');
+    return permission;
+  }
+
+  async findPermissionOnRole(permissionId: string) {
+    const permission = await this.prismaService.permission.findUnique({
+      where: { id: permissionId },
       include: {
-        Permission: true,
+        Roles: true,
       },
     });
-
-    // console.dir(permission);
-
-    // if (!permission || !permission.Permission.allowed) return false;
-
-    // const conditions = permission.Permission.conditions;
-    // if (conditions) {
-    //   // Ví dụ condition = { id: "${user.id}" }
-    //   for (const [field, value] of Object.entries(conditions)) {
-    //     if (value === '${user.id}' && context?.userId) {
-    //       if (context.targetId !== context.userId) {
-    //         return false; // customer đang đọc user khác
-    //       }
-    //     }
-    //   }
-    // }
-    return true;
+    if (!permission) throw new BadRequestException('Không tìm thấy quyền !');
+    return permission;
   }
 
   create(createPermissionDto: CreatePermissionDto) {
     return 'This action adds a new permission';
-  }
-
-  findAll() {
-    return `This action returns all permission`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} permission`;
   }
 
   update(id: number, updatePermissionDto: UpdatePermissionDto) {

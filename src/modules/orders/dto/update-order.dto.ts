@@ -1,4 +1,4 @@
-import { OrderStatus } from '@modules/orders/enum/OrderStatus.enum';
+import { OrderStatus } from '@Modules/orders/enum/OrderStatus.enum';
 import { IsEnum } from 'class-validator';
 
 export class UpdateOrderDto {

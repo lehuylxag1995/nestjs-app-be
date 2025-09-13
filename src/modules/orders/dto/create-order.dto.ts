@@ -1,4 +1,4 @@
-import { CreateOrderItemDto } from '@modules/orders/dto/create-order-item.dto';
+import { CreateOrderItemDto } from '@Modules/orders/dto/create-order-item.dto';
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsUUID, ValidateNested } from 'class-validator';
 

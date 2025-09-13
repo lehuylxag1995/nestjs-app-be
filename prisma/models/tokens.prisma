@@ -1,0 +1,12 @@
+model RefreshToken {
+    id        String   @id @default(uuid())
+    tokenHash String
+    expiresAt DateTime
+    device    String? // ví dụ: 'Chrome-Win10', 'iPhone'
+    userId    String
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, device])
+}

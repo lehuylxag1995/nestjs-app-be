@@ -1,5 +1,5 @@
-import { PaginationCategoryDto } from '@modules/categories/dto/pagination-category.dto';
-import { PrismaService } from '@modules/prisma/prisma.service';
+import { PaginationCategoryDto } from '@Modules/categories/dto/pagination-category.dto';
+import { PrismaService } from '@Modules/prisma/prisma.service';
 import {
   BadRequestException,
   Injectable,

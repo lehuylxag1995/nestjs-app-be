@@ -29,6 +29,7 @@ model User {
     PricingRules              PricingRule[]
     PurcharsOrder             PurcharsOrder[]
     PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
+    Tokens                    RefreshToken[]
 
     @@index([CCCD, phone])
     @@map("Users")

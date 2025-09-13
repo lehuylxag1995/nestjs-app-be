@@ -6,7 +6,7 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
-import { IsDecimalCustom } from 'src/constraint/IsDeciaml.constraint';
+import { IsDecimalCustom } from 'src/common/constraint/IsDeciaml.constraint';
 
 export class CreateProductDto {
   @IsString({ message: 'Tên sản phẩm phải là định dạng chuỗi' })

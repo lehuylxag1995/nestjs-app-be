@@ -1,4 +1,4 @@
-import { PrismaModule } from '@modules/prisma/prisma.module';
+import { PrismaModule } from '@Modules/prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';

@@ -1,4 +1,4 @@
-import { PrismaModule } from '@modules/prisma/prisma.module';
+import { PrismaModule } from '@Modules/prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { ProductVariantsController } from './product-variants.controller';
 import { ProductVariantsService } from './product-variants.service';

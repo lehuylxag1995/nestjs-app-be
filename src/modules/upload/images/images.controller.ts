@@ -15,11 +15,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import { CreateImageDto } from '@modules/upload/images/dto/create-image.dto';
-import { ImageUploadValidationPipe } from '@pipes/upload-image.pipe';
+import { CreateImageDto } from '@Modules/upload/images/dto/create-image.dto';
 import { existsSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { ImageUploadValidationPipe } from 'src/common/pipes/upload-image.pipe';
 import { v4 as uuidv4 } from 'uuid';
 import { ImagesService } from './images.service';
 

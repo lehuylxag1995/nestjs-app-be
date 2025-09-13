@@ -1,5 +1,5 @@
-import { PrismaService } from '@modules/prisma/prisma.service';
-import { CreateImageDto } from '@modules/upload/images/dto/create-image.dto';
+import { PrismaService } from '@Modules/prisma/prisma.service';
+import { CreateImageDto } from '@Modules/upload/images/dto/create-image.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()

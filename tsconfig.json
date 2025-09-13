@@ -11,12 +11,15 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@modules/*": ["src/modules/*"],
-      "@pipes/*": ["src/pipes/*"],
-      "@types/*": ["src/types/*"],
-      "@guards/*": ["src/guards/*"],
-      "@decorators/*": ["src/decorators/*"],
-      "@ultis/*": ["src/utils/*"]
+      "@Modules/*": ["src/modules/*"],
+      "@Pipes/*": ["src/common/pipes/*"],
+      "@Types/*": ["src/common/types/*"],
+      "@Guards/*": ["src/common/guards/*"],
+      "@Decorators/*": ["src/common/decorators/*"],
+      "@Ultis/*": ["src/common/utils/*"],
+      "@Interfaces/*": ["src/common/interfaces/*"],
+      "@Enums/*": ["src/common/enums/*"],
+      "@Constraints/*": ["src/common/constraint/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
