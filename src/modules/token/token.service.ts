@@ -96,6 +96,8 @@ export class TokenService {
   }
 
   async deleteTokenAll(userId: string) {
+    await this.findOne(userId);
+
     return await this.prismaService.refreshToken.deleteMany({
       where: { userId },
     });

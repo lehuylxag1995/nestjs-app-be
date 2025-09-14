@@ -1,4 +1,3 @@
-import { LogoutAuthDto } from '@Modules/auth/dto/logout-auth';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { TokenService } from '@Modules/token/token.service';
 import { UsersService } from '@Modules/users/users.service';
@@ -34,7 +33,7 @@ export class AuthService {
   }
 
   //6./ Hàm này nhận result của validateUser và tạo jwt
-  async login(user: JwtPayloadUser, req?: Request) {
+  async login(user: JwtPayloadUser, device?: string) {
     const payload = {
       name: user.name,
       id: user.id,
@@ -51,12 +50,6 @@ export class AuthService {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       expiresIn: '7d',
     });
-
-    let device = 'unknown';
-    if (req) {
-      const userAgent = req.headers['user-agent'] || 'unknown';
-      device = userAgent;
-    }
 
     // Lưu refresh token (đã hash) vào DB
     const tokenStored = await this.tokenService.create(
@@ -138,10 +131,13 @@ export class AuthService {
     };
   }
 
-  async revokeToken(req: LogoutAuthDto) {
-    //Trường đăng xuất một thiết bị hoặc nhiều thiết bị
-    if (req.device)
-      return await this.tokenService.deleteToken(req.userId, req.device);
-    else return await this.tokenService.deleteTokenAll(req.userId);
+  async revokeToken(user: JwtPayloadUser, device: string) {
+    //Trường đăng xuất một thiết bị
+    return await this.tokenService.deleteToken(user.id, device);
+  }
+
+  async revokeTokenAll(user: JwtPayloadUser) {
+    //Trường đăng xuất nhiều thiết bị
+    return await this.tokenService.deleteTokenAll(user.id);
   }
 }

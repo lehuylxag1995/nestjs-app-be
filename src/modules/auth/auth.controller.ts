@@ -1,4 +1,3 @@
-import { LogoutAuthDto } from '@Modules/auth/dto/logout-auth';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
 import { LocalAuthGuard } from '@Modules/auth/guards/local-auth.guard';
@@ -29,8 +28,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard) //1./Tạo Guard để xác thực bằng passport-local
   async authen(@GetUser() user: any, @Req() req: Request) {
+    const device = req.headers['user-agent'] || 'unknown';
     // 5./ Gọi hàm tạo JWT
-    return await this.authService.login(user, req);
+    return await this.authService.login(user, device);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -53,8 +53,16 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async signOut(@Body() body: LogoutAuthDto) {
-    const result = await this.authService.revokeToken(body);
+  async signOutByDevice(@GetUser() user: JwtPayloadUser, @Req() req: Request) {
+    const device = req.headers['user-agent'] || 'unknown';
+    const result = await this.authService.revokeToken(user, device);
+    if (result) return { message: 'Đăng xuất thành công' };
+  }
+
+  @Post('logout/all')
+  @UseGuards(JwtAuthGuard)
+  async signOutAllDevice(@GetUser() user: JwtPayloadUser) {
+    const result = await this.authService.revokeTokenAll(user);
     if (result) return { message: 'Đăng xuất thành công' };
   }
 }
