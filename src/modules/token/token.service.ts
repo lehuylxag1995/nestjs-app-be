@@ -1,11 +1,15 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { createHash } from 'crypto';
 
 @Injectable()
 export class TokenService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   sha256(input: string): string {
     return createHash('sha256').update(input).digest('hex');
@@ -18,12 +22,25 @@ export class TokenService {
 
       // Thời hạn refresh_token là 7 ngày
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      const numberDate = this.configService.get<number>('JWT_EXPIRE_AT') ?? 7;
+      expiresAt.setDate(expiresAt.getDate() + numberDate);
 
-      const deviceName = device || 'unknown';
+      const jwtDeviceNameDefault =
+        this.configService.get<string>('JWT_DEVICE_NAME') ?? 'unknown';
+      const deviceName = device || jwtDeviceNameDefault;
 
-      return await this.prismaService.refreshToken.create({
-        data: {
+      return await this.prismaService.refreshToken.upsert({
+        where: {
+          userId_device: {
+            device: deviceName,
+            userId,
+          },
+        },
+        update: {
+          tokenHash,
+          expiresAt,
+        },
+        create: {
           tokenHash,
           expiresAt,
           device: deviceName,
@@ -31,7 +48,13 @@ export class TokenService {
         },
       });
     } catch (error) {
-      console.log(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException(
+            `Lỗi: ${error.meta?.target} đã tồn tại trong DB !`,
+          );
+        }
+      }
     }
   }
 

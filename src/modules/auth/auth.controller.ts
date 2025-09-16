@@ -6,7 +6,6 @@ import { UsersService } from '@Modules/users/users.service';
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -31,12 +30,6 @@ export class AuthController {
     const device = req.headers['user-agent'] || 'unknown';
     // 5./ Gọi hàm tạo JWT
     return await this.authService.login(user, device);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Req() req) {
-    return req.user;
   }
 
   @Post('register')

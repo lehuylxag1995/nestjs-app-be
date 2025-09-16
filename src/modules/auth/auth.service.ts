@@ -43,12 +43,12 @@ export class AuthService {
     // Tạo token
     const access_token = await this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: '30s',
+      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_ACCESS_TOKEN'),
     });
 
     const refresh_token = await this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
+      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_REFRESH_TOKEN'),
     });
 
     // Lưu refresh token (đã hash) vào DB
@@ -58,7 +58,7 @@ export class AuthService {
       device,
     );
     if (!tokenStored) {
-      throw new BadRequestException('Tạo token bị lỗi !');
+      throw new BadRequestException('Không tạo được token cho tài khoản này !');
     }
 
     return {
@@ -99,13 +99,15 @@ export class AuthService {
       const newPayload = { name: user.name, id: user.id, roleId: user.roleId };
       const new_access_token = await this.jwtService.signAsync(newPayload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '30s',
+        expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_ACCESS_TOKEN'),
       });
 
       // 6. Tùy chọn: Tạo refresh token mới (rotation strategy)
       const new_refresh_token = await this.jwtService.signAsync(newPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
+        expiresIn: this.configService.get<string>(
+          'JWT_EXPIRE_IN_REFRESH_TOKEN',
+        ),
       });
 
       // 7. Cập nhật refresh token trong DB
