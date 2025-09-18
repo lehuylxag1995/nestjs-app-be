@@ -9,6 +9,7 @@ import { Prisma, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcrypt';
 import { createPrismaSelect } from 'src/common/utils/casl-prisma.helper';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -31,9 +32,15 @@ export class UsersService {
       const hash = await bcrypt.hash(createUserDto.password, saltOrRounds);
       createUserDto.password = hash;
 
+      // Tạo mã xác thực email
+      const tokenEmailVerify = uuidv4();
+
       // Tạo tài khoản
       return await this.prismaService.user.create({
-        data: createUserDto,
+        data: {
+          ...createUserDto,
+          tokenEmailVerify,
+        },
         omit: {
           username: true,
           password: true,
@@ -107,7 +114,6 @@ export class UsersService {
       omit: {
         createdAt: true,
         updatedAt: true,
-        isActive: true,
         password: true,
       },
     });
@@ -123,10 +129,40 @@ export class UsersService {
         name: true,
         password: true,
         roleId: true,
+        emailVerified: true,
       },
     });
 
     return user;
+  }
+
+  async findUserByTokenEmail(token: string) {
+    return await this.prismaService.user.findFirst({
+      where: {
+        tokenEmailVerify: token,
+      },
+    });
+  }
+
+  async updateActiveEmailVerify(id: string) {
+    return await this.prismaService.user.update({
+      where: { id },
+      data: {
+        emailVerified: true,
+        tokenEmailVerify: null,
+      },
+    });
+  }
+
+  async updateIsActiveById(id: string) {
+    const user = await this.findOne(id);
+
+    return await this.prismaService.user.update({
+      where: { id },
+      data: {
+        isActive: !user.isActive,
+      },
+    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -217,27 +253,6 @@ export class UsersService {
     }
   }
 
-  // async updateRole(id: string, role: UserRole) {
-  //   try {
-  //     return await this.prismaService.user.update({
-  //       where: { id },
-  //       data: { role },
-  //       omit: {
-  //         createdAt: true,
-  //         updatedAt: true,
-  //         isActive: true,
-  //         password: true,
-  //       },
-  //     });
-  //   } catch (error) {
-  //     if (error instanceof PrismaClientKnownRequestError) {
-  //       if (error.code === 'P2002') {
-  //         throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
-  //       }
-  //     }
-  //   }
-  // }
-
   async findUserWithPermissionOnRole(userId: string) {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -255,16 +270,4 @@ export class UsersService {
 
     return user;
   }
-
-  // async findAllAccessible(
-  //   paginationUserDto: PaginationUserDto,
-  //   user: UserPermissionOnRole,
-  // ) {
-  //   const userWithRole = await this.findUserWithPermissionOnRole(user.id);
-  //   const ability = this.caslAbilityFactory.createForUser(userWithRole);
-
-  //   return this.prismaService.user.findMany({
-  //     where: accessibleBy(ability, Action.Read).User,
-  //   });
-  // }
 }

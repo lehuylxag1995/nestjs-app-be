@@ -9,6 +9,7 @@ import { ImagesModule } from '@Modules/upload/images/images.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { MailModule } from './modules/mail/mail.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TokenModule } from './modules/token/token.module';
@@ -30,6 +31,7 @@ import { TokenModule } from './modules/token/token.module';
       isGlobal: true,
     }),
     TokenModule,
+    MailModule,
   ],
 })
 export class AppModule {}

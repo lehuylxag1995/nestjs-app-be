@@ -1,5 +1,6 @@
 import { jwtStrategy } from '@Modules/auth/strategies/jwt.strategy';
 import { LocalStrategy } from '@Modules/auth/strategies/local.strategy';
+import { MailModule } from '@Modules/mail/mail.module';
 import { TokenModule } from '@Modules/token/token.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
@@ -24,6 +25,7 @@ import { AuthService } from './auth.service';
         },
       }),
     }),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, jwtStrategy], //3./ Áp dụng chiến lược cho moduule

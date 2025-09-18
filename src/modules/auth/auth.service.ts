@@ -22,9 +22,11 @@ export class AuthService {
 
   //4./ Hàm này để so sánh mật khẩu trong CSDL và trả kết quả
   async validateUser(username: string, password: string) {
+    //Kiểm tra tài khoản có tồn tại ?
     const user = await this.userSerivce.findUserByUsername(username);
     if (!user) return null;
 
+    //Kiểm tra mật khẩu đúng chưa ?
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return null;
 
@@ -33,7 +35,7 @@ export class AuthService {
   }
 
   //6./ Hàm này nhận result của validateUser và tạo jwt
-  async login(user: JwtPayloadUser, device?: string) {
+  async login(user: JwtPayloadUser, device = 'unknown') {
     const payload = {
       name: user.name,
       id: user.id,
@@ -125,14 +127,6 @@ export class AuthService {
     }
   }
 
-  async createJwt(user: JwtPayloadUser) {
-    if (!user) throw new BadRequestException('Tài khoản không tồn tại !');
-    const payload = { id: user.id, name: user.name, role: user.roleId };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
-  }
-
   async revokeToken(user: JwtPayloadUser, device: string) {
     //Trường đăng xuất một thiết bị
     return await this.tokenService.deleteToken(user.id, device);
@@ -141,5 +135,22 @@ export class AuthService {
   async revokeTokenAll(user: JwtPayloadUser) {
     //Trường đăng xuất nhiều thiết bị
     return await this.tokenService.deleteTokenAll(user.id);
+  }
+
+  async verifyTokenEmail(token: string, device: string) {
+    //Tìm token
+    const user = (await this.userSerivce.findUserByTokenEmail(
+      token,
+    )) as JwtPayloadUser;
+
+    if (!user)
+      throw new BadRequestException('Mã xác thực Email không chính xác !');
+
+    //Cập nhật trạng thái
+    const result = await this.userSerivce.updateActiveEmailVerify(user.id);
+    if (!result) throw new BadRequestException('Kích hoạt email thất bại !');
+
+    //Tạo JWT
+    return await this.login(user, device);
   }
 }
