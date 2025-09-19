@@ -18,11 +18,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { GetJwtPayloadUser } from '@Decorators/get-user.decorator';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
 import { Action } from '@Modules/casl/casl-ability.factory';
 import { User } from '@prisma/client';
 import { CheckPolicies } from 'src/common/decorators/check-policy.decorator';
-import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { PoliciesGuard } from 'src/common/guards/policy.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -50,7 +50,7 @@ export class UsersController {
   @CheckPolicies((ability) => ability.can(Action.Read, 'User'))
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() currentUser: User, // Lấy user hiện tại từ JWT token
+    @GetJwtPayloadUser() currentUser: User, // Lấy user hiện tại từ JWT token
   ) {
     // Kiểm tra xem id được ysêu cầu có phải là của user hiện tại không
     if (id !== currentUser.id) {

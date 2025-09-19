@@ -1,0 +1,17 @@
+enum PurposeType {
+    EMAIL_VERIFY
+    RESET_PASSWORD
+    TFA
+}
+
+model OtpVerification {
+    id        String      @id @default(uuid())
+    userId    String
+    purpose   PurposeType // ví dụ: 'EMAIL_VERIFY', 'RESET_PASSWORD', '2FA'
+    otpHash   String
+    expiresAt DateTime
+    verify    Boolean     @default(false)
+    createdAt DateTime    @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+}

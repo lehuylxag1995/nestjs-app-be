@@ -1,4 +1,5 @@
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
+import { OtpService } from '@Modules/otp/otp.service';
 import { TokenService } from '@Modules/token/token.service';
 import { UsersService } from '@Modules/users/users.service';
 import {
@@ -18,6 +19,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly tokenService: TokenService,
+    private readonly otpService: OtpService,
   ) {}
 
   //4./ Hàm này để so sánh mật khẩu trong CSDL và trả kết quả
@@ -36,37 +38,45 @@ export class AuthService {
 
   //6./ Hàm này nhận result của validateUser và tạo jwt
   async login(user: JwtPayloadUser, device = 'unknown') {
-    const payload = {
-      name: user.name,
-      id: user.id,
-      roleId: user.roleId,
-    };
+    try {
+      const payload = {
+        name: user.name,
+        id: user.id,
+        roleId: user.roleId,
+      };
 
-    // Tạo token
-    const access_token = await this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_ACCESS_TOKEN'),
-    });
+      // Tạo token
+      const access_token = await this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_ACCESS_TOKEN'),
+      });
 
-    const refresh_token = await this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_REFRESH_TOKEN'),
-    });
+      const refresh_token = await this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_EXPIRE_IN_REFRESH_TOKEN',
+        ),
+      });
 
-    // Lưu refresh token (đã hash) vào DB
-    const tokenStored = await this.tokenService.create(
-      user.id,
-      refresh_token,
-      device,
-    );
-    if (!tokenStored) {
-      throw new BadRequestException('Không tạo được token cho tài khoản này !');
+      // Lưu refresh token (đã hash) vào DB
+      const tokenStored = await this.tokenService.create(
+        user.id,
+        refresh_token,
+        device,
+      );
+      if (!tokenStored) {
+        throw new BadRequestException(
+          'Không tạo được token cho tài khoản này !',
+        );
+      }
+
+      return {
+        access_token,
+        refresh_token,
+      };
+    } catch (error) {
+      throw error;
     }
-
-    return {
-      access_token,
-      refresh_token,
-    };
   }
 
   async refreshToken(data: RefresTokenDto) {
@@ -129,28 +139,19 @@ export class AuthService {
 
   async revokeToken(user: JwtPayloadUser, device: string) {
     //Trường đăng xuất một thiết bị
-    return await this.tokenService.deleteToken(user.id, device);
+    try {
+      return await this.tokenService.deleteToken(user.id, device);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async revokeTokenAll(user: JwtPayloadUser) {
     //Trường đăng xuất nhiều thiết bị
-    return await this.tokenService.deleteTokenAll(user.id);
-  }
-
-  async verifyTokenEmail(token: string, device: string) {
-    //Tìm token
-    const user = (await this.userSerivce.findUserByTokenEmail(
-      token,
-    )) as JwtPayloadUser;
-
-    if (!user)
-      throw new BadRequestException('Mã xác thực Email không chính xác !');
-
-    //Cập nhật trạng thái
-    const result = await this.userSerivce.updateActiveEmailVerify(user.id);
-    if (!result) throw new BadRequestException('Kích hoạt email thất bại !');
-
-    //Tạo JWT
-    return await this.login(user, device);
+    try {
+      return await this.tokenService.deleteTokenAll(user.id);
+    } catch (error) {
+      throw error;
+    }
   }
 }

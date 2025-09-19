@@ -1,17 +1,16 @@
 model User {
-    id               String  @id @default(uuid())
+    id          String  @id @default(uuid())
     //Thông tin định danh chung
-    name             String  @unique
-    email            String  @unique
-    phone            String  @unique
-    username         String  @unique
-    password         String
-    address          String  @unique
-    CCCD             String? @unique
-    emailVerified    Boolean @default(false)
-    tokenEmailVerify String?
-    isActive         Boolean @default(true)
-    roleId           String
+    name        String  @unique
+    email       String  @unique
+    phone       String  @unique
+    username    String  @unique
+    password    String
+    address     String  @unique
+    CCCD        String? @unique
+    emailVerify Boolean @default(false)
+    isActive    Boolean @default(true)
+    roleId      String
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -32,6 +31,7 @@ model User {
     PurcharsOrder             PurcharsOrder[]
     PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
     Tokens                    RefreshToken[]
+    OtpVerification           OtpVerification[]
 
     @@index([CCCD, phone])
     @@map("Users")

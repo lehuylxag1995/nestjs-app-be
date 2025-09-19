@@ -1,25 +1,24 @@
-import { VerifyEmailUserGuard } from '@Guards/veridy-email.guard';
+import { OtpPurposeEnum } from '@Enums/otp-purpose-type.enum';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
 import { LocalAuthGuard } from '@Modules/auth/guards/local-auth.guard';
 import { MailService } from '@Modules/mail/mail.service';
+import { OtpService } from '@Modules/otp/otp.service';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
 import { UsersService } from '@Modules/users/users.service';
 import {
-  BadRequestException,
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
-import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { GetJwtPayloadUser } from 'src/common/decorators/get-user.decorator';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -28,14 +27,14 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly userService: UsersService,
     private readonly mailService: MailService,
-    private readonly jwtService: JwtService,
+    private readonly otpService: OtpService,
   ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard) //1./Tạo Guard để xác thực bằng passport-local
-  async authen(@GetUser() user: any, @Req() req: Request) {
-    const device = req.headers['user-agent'] || 'unknown';
+  async authen(@GetJwtPayloadUser() user: any, @Req() req: Request) {
+    const device = req.headers['user-agent'];
     // 5./ Gọi hàm tạo JWT
     return await this.authService.login(user, device);
   }
@@ -43,36 +42,70 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.OK)
   async register(@Body() body: CreateUserDto) {
-    //Tạo User và token
-    const user = (await this.userService.create(body)) as User;
-    if (!user.tokenEmailVerify)
-      throw new BadRequestException('Không tạo được mã token email !');
+    //Tạo User
+    const user = await this.userService.create(body);
+
+    // Tạo OTP: Email Verify cho User
+    const otp = await this.otpService.createOtp(
+      user.id,
+      OtpPurposeEnum.EMAIL_VERIFY,
+    );
 
     // Gửi mail xác thực
-    const isCheckSendMail =
-      await this.mailService.sendConfirmEmailRegister(user);
-    if (!isCheckSendMail)
-      throw new BadRequestException('Không gửi được mail để xác thực');
+    // const result = await this.mailService.sendConfirmEmailRegister(
+    //   user.email,
+    //   user.name,
+    //   otp,
+    // );
 
     return {
-      status: 'success',
-      message: 'Đã gửi mail thành công !',
+      userId: user.id,
+      otp_email_verify: otp,
     };
   }
 
-  @Post('verify-email')
+  @Get('verify-email')
   async verifyEmail(
-    @Body('tokenEmailVerify', new ParseUUIDPipe())
-    token: string,
+    @Query('otp-email-verify') otp: string,
+    @Query('userId') userId: string,
     @Req() req: Request,
   ) {
-    const device = req.headers['user-agent'] || 'unknown';
+    //Lấy thông tin thiết bị đang đăng nhập
+    const device = req.headers['user-agent'];
 
-    // Kiểm tra token email và login
-    const { access_token, refresh_token } =
-      await this.authService.verifyTokenEmail(token, device);
+    // Kiểm tra otp và login
+    const user = (await this.otpService.verifyOtp(
+      userId,
+      otp,
+      OtpPurposeEnum.EMAIL_VERIFY,
+    )) as JwtPayloadUser;
 
-    return { access_token, refresh_token };
+    // Đăng nhập tài khoản
+    return await this.authService.login(user, device);
+  }
+
+  @Post('resend-otp-email')
+  async resendOtpEmailVerify(@Body('email') email: string) {
+    // Tìm User
+    const user = await this.userService.findUserByEmail(email);
+
+    // Tạo Otp
+    const otp = await this.otpService.createOtp(
+      user.id,
+      OtpPurposeEnum.EMAIL_VERIFY,
+    );
+
+    // Gửi mail xác thực
+    // const result = await this.mailService.sendConfirmEmailRegister(
+    //   user.email,
+    //   user.name,
+    //   otp,
+    // );
+
+    return {
+      userId: user.id,
+      otp_email_verify: otp,
+    };
   }
 
   @Post('refresh')
@@ -81,16 +114,19 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard, VerifyEmailUserGuard)
-  async signOutByDevice(@GetUser() user: JwtPayloadUser, @Req() req: Request) {
+  @UseGuards(JwtAuthGuard)
+  async signOutByDevice(
+    @GetJwtPayloadUser() user: JwtPayloadUser,
+    @Req() req: Request,
+  ) {
     const device = req.headers['user-agent'] || 'unknown';
     const result = await this.authService.revokeToken(user, device);
     if (result) return { message: 'Đăng xuất thành công' };
   }
 
   @Post('logout/all')
-  @UseGuards(JwtAuthGuard, VerifyEmailUserGuard)
-  async signOutAllDevice(@GetUser() user: JwtPayloadUser) {
+  @UseGuards(JwtAuthGuard)
+  async signOutAllDevice(@GetJwtPayloadUser() user: JwtPayloadUser) {
     const result = await this.authService.revokeTokenAll(user);
     if (result) return { message: 'Đăng xuất thành công' };
   }

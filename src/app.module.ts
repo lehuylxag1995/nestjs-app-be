@@ -13,6 +13,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TokenModule } from './modules/token/token.module';
+import { OtpModule } from './modules/otp/otp.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TokenModule } from './modules/token/token.module';
     }),
     TokenModule,
     MailModule,
+    OtpModule,
   ],
 })
 export class AppModule {}

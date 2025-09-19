@@ -4,12 +4,15 @@ import { Action, CaslAbilityFactory } from '@Modules/casl/casl-ability.factory';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { RolesService } from '@Modules/roles/roles.service';
 import { PaginationUserDto } from '@Modules/users/dto/pagination-user.dto';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcrypt';
 import { createPrismaSelect } from 'src/common/utils/casl-prisma.helper';
-import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -32,15 +35,9 @@ export class UsersService {
       const hash = await bcrypt.hash(createUserDto.password, saltOrRounds);
       createUserDto.password = hash;
 
-      // Tạo mã xác thực email
-      const tokenEmailVerify = uuidv4();
-
       // Tạo tài khoản
       return await this.prismaService.user.create({
-        data: {
-          ...createUserDto,
-          tokenEmailVerify,
-        },
+        data: createUserDto,
         omit: {
           username: true,
           password: true,
@@ -52,10 +49,27 @@ export class UsersService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
+          throw new ConflictException(`${error.meta?.target} đã tồn tại`);
         }
-      } else console.error(error);
+      }
+      throw error; // để service throw ra luôn
     }
+  }
+
+  async findUserByEmail(email: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+    if (!user)
+      throw new BadRequestException(
+        'Không tìm thấy tài khoản người dùng của email này !',
+      );
+    return user;
   }
 
   async findAll(paginationUserDto: PaginationUserDto, user: any) {
@@ -128,30 +142,12 @@ export class UsersService {
         id: true,
         name: true,
         password: true,
+        emailVerify: true,
         roleId: true,
-        emailVerified: true,
       },
     });
 
     return user;
-  }
-
-  async findUserByTokenEmail(token: string) {
-    return await this.prismaService.user.findFirst({
-      where: {
-        tokenEmailVerify: token,
-      },
-    });
-  }
-
-  async updateActiveEmailVerify(id: string) {
-    return await this.prismaService.user.update({
-      where: { id },
-      data: {
-        emailVerified: true,
-        tokenEmailVerify: null,
-      },
-    });
   }
 
   async updateIsActiveById(id: string) {

@@ -19,10 +19,9 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
     if (!user)
       throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng !');
-    else if (!user.emailVerified)
-      throw new ForbiddenException(
-        'Bạn chưa kích hoạt Email đăng ký tài khoản !',
-      );
+
+    if (!user.emailVerify)
+      throw new ForbiddenException('Email của bạn chưa được kích hoạt');
 
     return user;
   }

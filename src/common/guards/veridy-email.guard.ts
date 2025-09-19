@@ -2,7 +2,6 @@ import { UsersService } from '@Modules/users/users.service';
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -20,9 +19,6 @@ export class VerifyEmailUserGuard implements CanActivate {
     }
 
     const dbUser = await this.userService.findOne(userJWT.id);
-
-    if (!dbUser || !dbUser.emailVerified)
-      throw new ForbiddenException('Email chưa kích hoạt !');
 
     return true;
   }
