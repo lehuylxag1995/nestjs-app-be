@@ -9,11 +9,12 @@ import { ImagesModule } from '@Modules/upload/images/images.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { MailModule } from './modules/mail/mail.module';
+import { OtpModule } from './modules/otp/otp.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TokenModule } from './modules/token/token.module';
-import { OtpModule } from './modules/otp/otp.module';
 
 @Module({
   imports: [
@@ -34,6 +35,14 @@ import { OtpModule } from './modules/otp/otp.module';
     TokenModule,
     MailModule,
     OtpModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 3,
+        },
+      ],
+    }),
   ],
 })
 export class AppModule {}

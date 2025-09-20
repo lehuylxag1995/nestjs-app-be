@@ -17,11 +17,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { GetJwtPayloadUser } from 'src/common/decorators/get-user.decorator';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -84,6 +86,7 @@ export class AuthController {
     return await this.authService.login(user, device);
   }
 
+  @Throttle({ default: { ttl: 30000, limit: 3 } })
   @Post('resend-otp-email')
   async resendOtpEmailVerify(@Body('email') email: string) {
     // Tìm User
