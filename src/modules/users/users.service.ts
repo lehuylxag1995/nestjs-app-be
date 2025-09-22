@@ -63,6 +63,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        roleId: true,
       },
     });
     if (!user)
@@ -148,17 +149,6 @@ export class UsersService {
     });
 
     return user;
-  }
-
-  async updateIsActiveById(id: string) {
-    const user = await this.findOne(id);
-
-    return await this.prismaService.user.update({
-      where: { id },
-      data: {
-        isActive: !user.isActive,
-      },
-    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -249,6 +239,24 @@ export class UsersService {
     }
   }
 
+  async updateEmailVerify(id: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx ?? this.prismaService;
+
+      const user = await this.findOne(id);
+
+      return await prisma.user.update({
+        where: { id },
+        data: {
+          emailVerify: !user.emailVerify,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async findUserWithPermissionOnRole(userId: string) {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -265,5 +273,26 @@ export class UsersService {
     if (!user) throw new BadRequestException('Không tìm thấy tài khoản !');
 
     return user;
+  }
+
+  async updatePassword(
+    id: string,
+    password: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      const prisma = tx ?? this.prismaService;
+      await this.findOne(id);
+
+      return await prisma.user.update({
+        where: { id },
+        data: {
+          password,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

@@ -27,4 +27,33 @@ export class MailService {
       throw error;
     }
   }
+
+  async sendResetPassword(
+    uId: string,
+    email: string,
+    name: string,
+    otp: string,
+  ) {
+    try {
+      const isCheckSendMail = (await this.mailerService.sendMail({
+        to: email,
+        subject: 'Mail cập nhật mật khẩu tài khoản',
+        template: 'reset-password',
+        context: {
+          name,
+          otp,
+          uId,
+        },
+      }))
+        ? true
+        : false;
+
+      if (!isCheckSendMail)
+        throw new BadRequestException('Không gửi được mail để xác thực');
+
+      return isCheckSendMail;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

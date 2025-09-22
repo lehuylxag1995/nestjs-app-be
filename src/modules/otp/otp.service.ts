@@ -2,6 +2,7 @@ import { OtpPurposeEnum } from '@Enums/otp-purpose-type.enum';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 @Injectable()
 export class OtpService {
@@ -14,9 +15,23 @@ export class OtpService {
     try {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpHash = await bcrypt.hash(otp, 10);
-      const time =
-        this.configService.get<number>('OTP_EXPIRE_EMAIL_VERIFY') ?? 5;
-      // const expiresAt = new Date(Date.now() + 1000 * 60 * time);
+
+      // let expiresAt = new Date();
+      // switch (purpose) {
+      //   case OtpPurposeEnum.EMAIL_VERIFY:
+      //     const timeVerifyEmail =
+      //       this.configService.get<number>('OTP_EXPIRE_EMAIL_VERIFY') ?? 1;
+      //     expiresAt = new Date(Date.now() + 1000 * 60 * timeVerifyEmail);
+      //     break;
+      //   case OtpPurposeEnum.RESET_PASSWORD:
+      //     const timeResetPassword =
+      //       this.configService.get<number>('OTP_EXPIRE_RESET_PASSWORD') ?? 1;
+      //     expiresAt = new Date(Date.now() + 1000 * 60 * timeResetPassword);
+      //   default:
+      //     break;
+      // }
+
+      // const  expiresAt = new Date(Date.now() + 1000 * 60 * timeVerifyEmail);
       const expiresAt = new Date(Date.now() + 1000 * 10);
 
       const result = await this.prismaService.otpVerification.create({
@@ -57,30 +72,59 @@ export class OtpService {
       const match = await bcrypt.compare(otp, otpDb.otpHash);
       if (!match) throw new BadRequestException('OTP không đúng !');
 
-      const result = await this.prismaService.$transaction(async (prisma) => {
-        //Cập nhật trạng thái xác thực cho tài khoản
-        const user = await prisma.user.update({
-          where: { id: otpDb.userId },
-          data: { emailVerify: true },
-        });
-
-        // Xóa otp đã gửi
-        await prisma.otpVerification.deleteMany({
-          where: {
-            userId,
-            purpose,
-          },
-        });
-
-        return { user };
-      });
-
-      if (!result)
-        throw new BadRequestException('Quy trình xác thực OTP có lỗi !');
-
-      return result.user;
+      return otpDb;
     } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async deleteOtp(id: string) {
+    try {
+      return await this.prismaService.otpVerification.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async deleteAllOtp(
+    userId: string,
+    purpose: OtpPurposeEnum,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      const prisma = tx ?? this.prismaService;
+      return await prisma.otpVerification.deleteMany({
+        where: {
+          userId,
+          purpose,
+        },
+      });
+    } catch (error) {
+      console.log(error);
       throw error;
     }
   }
 }
+
+//Logic verify Email
+// const result = await this.prismaService.$transaction(async (prisma) => {
+//   //Cập nhật trạng thái xác thực cho tài khoản
+//   const user = await prisma.user.update({
+//     where: { id: otpDb.userId },
+//     data: { emailVerify: true },
+//   });
+
+//   // Xóa otp đã gửi
+//   await prisma.otpVerification.deleteMany({
+//     where: {
+//       userId,
+//       purpose,
+//     },
+//   });
+
+//   return { user };
+// });

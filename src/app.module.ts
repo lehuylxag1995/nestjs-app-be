@@ -1,20 +1,19 @@
+import { AppConfigModule } from '@Configs/app.config';
 import { AuthModule } from '@Modules/auth/auth.module';
 import { CaslModule } from '@Modules/casl/casl.module';
 import { CategoriesModule } from '@Modules/categories/categories.module';
+import { MailModule } from '@Modules/mail/mail.module';
 import { OrdersModule } from '@Modules/orders/orders.module';
+import { OtpModule } from '@Modules/otp/otp.module';
+import { PermissionModule } from '@Modules/permission/permission.module';
 import { PrismaModule } from '@Modules/prisma/prisma.module';
 import { ProductVariantsModule } from '@Modules/product-variants/product-variants.module';
 import { ProductsModule } from '@Modules/products/products.module';
+import { RolesModule } from '@Modules/roles/roles.module';
+import { TokenModule } from '@Modules/token/token.module';
 import { ImagesModule } from '@Modules/upload/images/images.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { MailModule } from './modules/mail/mail.module';
-import { OtpModule } from './modules/otp/otp.module';
-import { PermissionModule } from './modules/permission/permission.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { TokenModule } from './modules/token/token.module';
 
 @Module({
   imports: [
@@ -29,20 +28,10 @@ import { TokenModule } from './modules/token/token.module';
     CaslModule,
     PermissionModule,
     RolesModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     TokenModule,
     MailModule,
     OtpModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60000,
-          limit: 3,
-        },
-      ],
-    }),
+    ...AppConfigModule,
   ],
 })
 export class AppModule {}

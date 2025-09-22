@@ -19,7 +19,8 @@
       "@Ultis/*": ["src/common/utils/*"],
       "@Interfaces/*": ["src/common/interfaces/*"],
       "@Enums/*": ["src/common/enums/*"],
-      "@Constraints/*": ["src/common/constraint/*"]
+      "@Constraints/*": ["src/common/constraint/*"],
+      "@Configs/*": ["src/common/configs/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

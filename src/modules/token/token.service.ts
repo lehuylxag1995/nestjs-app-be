@@ -1,7 +1,9 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { createHash } from 'crypto';
 
 @Injectable()
@@ -9,13 +11,28 @@ export class TokenService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   sha256(input: string): string {
     return createHash('sha256').update(input).digest('hex');
   }
 
-  async create(userId: string, refreshToken: string, device?: string) {
+  async generateToken(payload: JwtPayloadUser) {
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET_ACCESS_TOKEN'),
+      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_ACCESS_TOKEN'),
+    });
+
+    const refresh_token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET_REFRESH_TOKEN'),
+      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN_REFRESH_TOKEN'),
+    });
+
+    return { access_token, refresh_token };
+  }
+
+  async createToken(userId: string, refreshToken: string, device?: string) {
     try {
       //Mã hóa token bằng sha256 luôn 64 ký tự hex
       const tokenHash = this.sha256(refreshToken);
