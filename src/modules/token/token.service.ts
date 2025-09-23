@@ -2,6 +2,7 @@ import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { createHash } from 'crypto';
@@ -135,9 +136,15 @@ export class TokenService {
     }
   }
 
-  async deleteTokenAll(userId: string) {
-    return await this.prismaService.refreshToken.deleteMany({
-      where: { userId },
-    });
+  async deleteTokenAll(userId: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx ?? this.prismaService;
+      return await prisma.refreshToken.deleteMany({
+        where: { userId },
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 }

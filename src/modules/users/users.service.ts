@@ -129,7 +129,7 @@ export class UsersService {
       omit: {
         createdAt: true,
         updatedAt: true,
-        password: true,
+        // password: true,
       },
     });
     if (!user) throw new BadRequestException('Không tìm thấy tài khoản');

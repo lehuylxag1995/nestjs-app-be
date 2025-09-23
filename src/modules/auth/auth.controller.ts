@@ -1,3 +1,4 @@
+import { ChangePasswordDto } from '@Modules/auth/dto/change-password';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
@@ -97,5 +98,16 @@ export class AuthController {
       data,
       device,
     );
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @GetJwtPayloadUser() user: JwtPayloadUser,
+    @Body() data: ChangePasswordDto,
+    @Req() req: Request,
+  ) {
+    const device = req.headers['user-agent'];
+    return await this.authService.changePasswordUser(user, data, device);
   }
 }

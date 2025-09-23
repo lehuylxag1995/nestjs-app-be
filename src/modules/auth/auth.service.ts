@@ -1,4 +1,5 @@
 import { OtpPurposeEnum } from '@Enums/otp-purpose-type.enum';
+import { ChangePasswordDto } from '@Modules/auth/dto/change-password';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
 import { MailService } from '@Modules/mail/mail.service';
@@ -310,5 +311,42 @@ export class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async changePasswordUser(
+    user: JwtPayloadUser,
+    data: ChangePasswordDto,
+    device?: string,
+  ) {
+    // Lấy thông tin tài khoản
+    const userDb = await this.userSerivce.findOne(user.id);
+    if (!userDb)
+      throw new BadRequestException('Không tìm thấy thông tin tài khoản');
+
+    // Kiểm tra mật khẩu cũ
+    const matchPassword = await bcrypt.compare(data.password, userDb.password);
+    if (!matchPassword)
+      throw new BadRequestException('Mật khẩu cũ không chính xác !');
+
+    // Tạo mật khẩu mới
+    const newPassword = await bcrypt.hash(data.reNewPassword, 10);
+
+    const userJWTPayload = await this.prismaService.$transaction(
+      async (prisma) => {
+        // Cập nhật mật khẩu
+        const userJWTPayload = (await this.userSerivce.updatePassword(
+          user.id,
+          newPassword,
+          prisma,
+        )) as JwtPayloadUser;
+
+        // Xóa các token đăng nhập bằng mật khẩu cũ
+        await this.tokenService.deleteTokenAll(user.id, prisma);
+
+        return userJWTPayload;
+      },
+    );
+
+    return await this.login(userJWTPayload, device);
   }
 }
