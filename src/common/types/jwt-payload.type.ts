@@ -1,5 +1,6 @@
 export type JwtPayloadUser = {
-  id: string;
-  name: string;
+  userId: string;
   roleId: string;
+  exp?: number; // expiration (timestamp)
+  iat?: number; // issued at (timestamp)
 };

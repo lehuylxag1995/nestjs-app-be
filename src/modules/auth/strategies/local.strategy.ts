@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { Strategy } from 'passport-local';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super();
   }
 
-  // 3./ Gọi Kiểm tra người dùng
+  // 3./ triển khai validate ( bắt buộc ). Gọi Kiểm tra người dùng
   async validate(username: string, password: string) {
     const user = await this.autheService.validateUser(username, password);
 
@@ -23,6 +24,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     if (!user.emailVerify)
       throw new ForbiddenException('Email của bạn chưa được kích hoạt');
 
-    return user;
+    // Trả về jwt chung của app
+    const result: JwtPayloadUser = {
+      userId: user.id,
+      roleId: user.roleId,
+    };
+    return result;
   }
 }

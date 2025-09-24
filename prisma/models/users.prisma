@@ -1,12 +1,12 @@
 model User {
     id          String  @id @default(uuid())
     //Thông tin định danh chung
-    name        String  @unique
+    name        String? @unique
     email       String  @unique
-    phone       String  @unique
-    username    String  @unique
-    password    String
-    address     String  @unique
+    phone       String? @unique
+    username    String? @unique
+    password    String?
+    address     String? // Trường hợp ở địa chỉ
     CCCD        String? @unique
     emailVerify Boolean @default(false)
     isActive    Boolean @default(true)
@@ -31,8 +31,30 @@ model User {
     PurcharsOrder             PurcharsOrder[]
     PurchaseOrderItemReceipts PurchaseOrderItemReceipt[]
     Tokens                    RefreshToken[]
-    OtpVerification           OtpVerification[]
+    OtpVerifications          OtpVerification[]
+    UserSocials               UserSocial[]
 
     @@index([CCCD, phone])
     @@map("Users")
+}
+
+enum SocialType {
+    FACEBOOK
+    GOOGLE
+}
+
+model UserSocial {
+    id          String     @id @default(uuid())
+    social      SocialType // 'facebook' | 'google'
+    socialId    String // id bên provider
+    displayName String
+    userId      String
+    avatarUrl   String?
+
+    createdAt DateTime @default(now())
+    updateAt  DateTime @updatedAt
+
+    User User @relation(fields: [userId], references: [id])
+
+    @@unique([social, socialId])
 }

@@ -1,6 +1,6 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { RolesName } from '@prisma/client';
+import { Prisma, RolesName } from '@prisma/client';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 
@@ -15,16 +15,24 @@ export class RolesService {
     return `This action returns all roles`;
   }
 
-  async findRoleByName(nameRole: RolesName) {
-    const role = await this.prismaService.role.findUnique({
-      where: { name: nameRole as RolesName },
-      omit: {
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    if (!role) throw new BadRequestException('Không tìm thấy vai trò !');
-    return role;
+  async findRoleByName(nameRole: RolesName, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx ?? this.prismaService;
+
+      const role = await prisma.role.findUnique({
+        where: { name: nameRole as RolesName },
+        omit: {
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      if (!role) throw new BadRequestException('Không tìm thấy vai trò !');
+      return role;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   async findRole(id: string) {

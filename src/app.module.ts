@@ -14,6 +14,7 @@ import { TokenModule } from '@Modules/token/token.module';
 import { ImagesModule } from '@Modules/upload/images/images.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
+import { UserSocialModule } from './modules/user-provider/user-social.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { Module } from '@nestjs/common';
     MailModule,
     OtpModule,
     ...AppConfigModule,
+    UserSocialModule,
   ],
 })
 export class AppModule {}

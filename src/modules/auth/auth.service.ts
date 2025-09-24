@@ -5,7 +5,11 @@ import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
 import { MailService } from '@Modules/mail/mail.service';
 import { OtpService } from '@Modules/otp/otp.service';
 import { PrismaService } from '@Modules/prisma/prisma.service';
+import { RolesService } from '@Modules/roles/roles.service';
 import { TokenService } from '@Modules/token/token.service';
+import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
+import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
+import { UserSocialService } from '@Modules/user-provider/user-social.service';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
 import { UsersService } from '@Modules/users/users.service';
 import {
@@ -15,7 +19,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
+import { SocialType } from '@prisma/client';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
+import { UserFacebookResponse } from '@Types/user-facebook-response.type';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -28,6 +34,8 @@ export class AuthService {
     private readonly otpService: OtpService,
     private readonly prismaService: PrismaService,
     private readonly mailService: MailService,
+    private readonly userSocialService: UserSocialService,
+    private readonly roleService: RolesService,
   ) {}
 
   //4./ Hàm này để so sánh mật khẩu trong CSDL và trả kết quả
@@ -37,6 +45,8 @@ export class AuthService {
     if (!user) return null;
 
     //Kiểm tra mật khẩu đúng chưa ?
+    if (!user.password)
+      throw new BadRequestException('Tài khoản không có mật khẩu !');
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return null;
 
@@ -45,21 +55,15 @@ export class AuthService {
   }
 
   //6./ Hàm này nhận result của validateUser và tạo jwt
-  async login(user: JwtPayloadUser, device = 'unknown') {
+  async login(userJwtPayload: JwtPayloadUser, device = 'unknown') {
     try {
-      const payload = {
-        name: user.name,
-        id: user.id,
-        roleId: user.roleId,
-      };
-
       // Tạo token
       const { access_token, refresh_token } =
-        await this.tokenService.generateToken(payload);
+        await this.tokenService.generateToken(userJwtPayload);
 
       // Lưu refresh token (đã hash) vào DB
       const tokenStored = await this.tokenService.createToken(
-        user.id,
+        userJwtPayload.userId,
         refresh_token,
         device,
       );
@@ -81,7 +85,7 @@ export class AuthService {
   async resendOtpEmailVerifyUser(email: string) {
     try {
       // Tìm User
-      const user = await this.userSerivce.findUserByEmail(email);
+      const user = await this.userSerivce.findUserByEmailOrThrow(email);
 
       // Tạo Otp
       const otp = await this.otpService.createOtp(
@@ -143,7 +147,7 @@ export class AuthService {
       if (!otpDb) throw new BadRequestException('OTP không chính xác !');
 
       // Giao dịch toàn vẹn
-      const user = (await this.prismaService.$transaction(async (prisma) => {
+      const data = await this.prismaService.$transaction(async (prisma) => {
         // Cập nhật trạng thái đã xác thực email cho tài khoản
         const user = await this.userSerivce.updateEmailVerify(
           otpDb.userId,
@@ -158,10 +162,15 @@ export class AuthService {
         );
 
         return user;
-      })) as JwtPayloadUser;
+      });
+
+      const result: JwtPayloadUser = {
+        userId: data.id,
+        roleId: data.roleId,
+      };
 
       // Đăng nhập tài khoản
-      return await this.login(user, device);
+      return await this.login(result, device);
     } catch (error) {
       throw error;
     }
@@ -170,15 +179,18 @@ export class AuthService {
   async refreshTokenLogin(data: RefresTokenDto) {
     try {
       // 1. Verify refresh token
-      const payload = await this.jwtService.verifyAsync(data.refresh_token, {
-        secret: await this.configService.get<string>(
-          'JWT_SECRET_REFRESH_TOKEN',
-        ),
-      });
+      const payload = await this.jwtService.verifyAsync<JwtPayloadUser>(
+        data.refresh_token,
+        {
+          secret: await this.configService.get<string>(
+            'JWT_SECRET_REFRESH_TOKEN',
+          ),
+        },
+      );
 
       // 2. Tìm token đã hash trong DB
       const storedToken = await this.tokenService.findTokenByUserAndToken(
-        payload.id,
+        payload.userId,
         data.refresh_token,
       );
       if (!storedToken)
@@ -192,13 +204,16 @@ export class AuthService {
       }
 
       // 4. Lấy thông tin user
-      const user = await this.userSerivce.findOne(payload.id);
+      const user = await this.userSerivce.findOne(payload.userId);
       if (!user) {
         throw new UnauthorizedException('Không tìm thấy tài khoản người dùng');
       }
 
       // 5. Tạo thông tin JWT
-      const newPayload = { name: user.name, id: user.id, roleId: user.roleId };
+      const newPayload: JwtPayloadUser = {
+        userId: user.id,
+        roleId: user.roleId,
+      };
 
       // 6. Tạo JWT Token mới
       const { access_token, refresh_token } =
@@ -222,7 +237,7 @@ export class AuthService {
   async revokeToken(user: JwtPayloadUser, device: string) {
     //Trường đăng xuất một thiết bị
     try {
-      return await this.tokenService.deleteToken(user.id, device);
+      return await this.tokenService.deleteToken(user.userId, device);
     } catch (error) {
       console.log(error);
       throw error;
@@ -232,7 +247,7 @@ export class AuthService {
   async revokeTokenAll(user: JwtPayloadUser) {
     //Trường đăng xuất nhiều thiết bị
     try {
-      return await this.tokenService.deleteTokenAll(user.id);
+      return await this.tokenService.deleteTokenAll(user.userId);
     } catch (error) {
       console.log(error);
       throw error;
@@ -291,10 +306,10 @@ export class AuthService {
         const password = await bcrypt.hash(data.reNewPassword, 10);
 
         // Cập nhật mật khẩu mới
-        const user = (await this.userSerivce.updatePassword(
+        const userUpdated = await this.userSerivce.updatePassword(
           otpDb.userId,
           password,
-        )) as JwtPayloadUser;
+        );
 
         // Xóa tất cả OTP của user
         await this.otpService.deleteAllOtp(
@@ -303,7 +318,12 @@ export class AuthService {
           prisma,
         );
 
-        return user;
+        const result: JwtPayloadUser = {
+          userId: userUpdated.id,
+          roleId: userUpdated.roleId,
+        };
+
+        return result;
       });
 
       // Đăng nhập bằng mật khẩu mới
@@ -319,14 +339,19 @@ export class AuthService {
     device?: string,
   ) {
     // Lấy thông tin tài khoản
-    const userDb = await this.userSerivce.findOne(user.id);
+    const userDb = await this.userSerivce.findOne(user.userId);
     if (!userDb)
       throw new BadRequestException('Không tìm thấy thông tin tài khoản');
 
     // Kiểm tra mật khẩu cũ
-    const matchPassword = await bcrypt.compare(data.password, userDb.password);
-    if (!matchPassword)
-      throw new BadRequestException('Mật khẩu cũ không chính xác !');
+    if (userDb.password) {
+      const matchPassword = await bcrypt.compare(
+        data.password,
+        userDb.password,
+      );
+      if (!matchPassword)
+        throw new BadRequestException('Mật khẩu cũ không chính xác !');
+    } else throw new BadRequestException('Tài khoản này không có mật khẩu !');
 
     // Tạo mật khẩu mới
     const newPassword = await bcrypt.hash(data.reNewPassword, 10);
@@ -334,19 +359,104 @@ export class AuthService {
     const userJWTPayload = await this.prismaService.$transaction(
       async (prisma) => {
         // Cập nhật mật khẩu
-        const userJWTPayload = (await this.userSerivce.updatePassword(
-          user.id,
+        const userUpdated = await this.userSerivce.updatePassword(
+          user.userId,
           newPassword,
           prisma,
-        )) as JwtPayloadUser;
+        );
 
         // Xóa các token đăng nhập bằng mật khẩu cũ
-        await this.tokenService.deleteTokenAll(user.id, prisma);
+        await this.tokenService.deleteTokenAll(user.userId, prisma);
 
-        return userJWTPayload;
+        // Trả về jwt chung của app
+        const result: JwtPayloadUser = {
+          userId: userUpdated.id,
+          roleId: userUpdated.roleId,
+        };
+
+        return result;
       },
     );
 
     return await this.login(userJWTPayload, device);
+  }
+
+  async craeteOrUpdateSocialFacebook(userFacebook: UserFacebookResponse) {
+    // 1. Lấy role CUSTOMER mặc định
+    const role = await this.roleService.findRoleByName('CUSTOMER');
+
+    // 2. Tìm user theo email
+    const user = await this.userSerivce.findUserByEmail(userFacebook.email);
+
+    // 3. Nếu email chưa có thì tạo mới User và userSocial
+    if (!user) {
+      const result = await this.prismaService.$transaction(async (prisma) => {
+        // 3.1 Tạo user
+        const newUser = await prisma.user.create({
+          data: {
+            email: userFacebook.email,
+            roleId: role.id,
+          },
+          select: { id: true, name: true, email: true, roleId: true },
+        });
+        if (!newUser)
+          throw new BadRequestException('Tạo email người dùng thất bại !');
+
+        // 3.2. Tạo user provider
+        const reqSocialDto: CreateUserSocialDto = {
+          social: SocialType.FACEBOOK,
+          socialId: userFacebook.facebookId,
+          displayName: userFacebook.displayName,
+          userId: newUser.id,
+          avatarUrl: userFacebook.picture,
+        };
+        const userSocial = await this.userSocialService.createSocial(
+          reqSocialDto,
+          prisma,
+        );
+        if (!userSocial)
+          throw new BadRequestException('Tạo tài khoản xã hội thất bại !');
+
+        // 3.3 Cập nhật luôn xác thực email
+        await this.userSerivce.updateEmailVerify(newUser.id, prisma);
+
+        return { newUser, userSocial };
+      });
+
+      return result.userSocial;
+    }
+    // 4. Nếu email đã tồn tại thì tạo userSocial
+    else {
+      //4.1 Check social có tồn tại ?
+      const social = await this.userSocialService.findSocialUser(
+        userFacebook.facebookId,
+        SocialType.FACEBOOK,
+      );
+
+      // 4.2 Social không tồn tại
+      if (!social) {
+        const reqSocialDto: CreateUserSocialDto = {
+          social: SocialType.FACEBOOK,
+          socialId: userFacebook.facebookId,
+          displayName: userFacebook.displayName,
+          userId: user.id,
+          avatarUrl: userFacebook.picture,
+        };
+        return await this.userSocialService.createSocial(reqSocialDto);
+      }
+      // 4.3 Social tồn tại thì chỉ update
+      else {
+        const updateSocialDto: UpdateUserSocialDto = {
+          //update
+          displayName: userFacebook.displayName,
+          avatarUrl: userFacebook.picture,
+          //where
+          social: SocialType.FACEBOOK,
+          socialId: userFacebook.facebookId,
+          userId: user.id,
+        };
+        return await this.userSocialService.updateSocial(updateSocialDto);
+      }
+    }
   }
 }

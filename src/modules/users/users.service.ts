@@ -56,8 +56,10 @@ export class UsersService {
     }
   }
 
-  async findUserByEmail(email: string) {
-    const user = await this.prismaService.user.findUnique({
+  async findUserByEmailOrThrow(email: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx ?? this.prismaService;
+
+    const user = await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
@@ -66,11 +68,27 @@ export class UsersService {
         roleId: true,
       },
     });
+
     if (!user)
       throw new BadRequestException(
         'Không tìm thấy tài khoản người dùng của email này !',
       );
+
     return user;
+  }
+
+  async findUserByEmail(email: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx ?? this.prismaService;
+
+    return await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        roleId: true,
+      },
+    });
   }
 
   async findAll(paginationUserDto: PaginationUserDto, user: any) {
@@ -132,7 +150,7 @@ export class UsersService {
         // password: true,
       },
     });
-    if (!user) throw new BadRequestException('Không tìm thấy tài khoản');
+
     return user;
   }
 
@@ -243,12 +261,12 @@ export class UsersService {
     try {
       const prisma = tx ?? this.prismaService;
 
-      const user = await this.findOne(id);
+      const user = await prisma.user.findUnique({ where: { id } });
 
       return await prisma.user.update({
         where: { id },
         data: {
-          emailVerify: !user.emailVerify,
+          emailVerify: !user?.emailVerify,
         },
       });
     } catch (error) {

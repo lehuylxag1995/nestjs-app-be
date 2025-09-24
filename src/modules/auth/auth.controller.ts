@@ -1,6 +1,7 @@
 import { ChangePasswordDto } from '@Modules/auth/dto/change-password';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
+import { FacebookAuthGuard } from '@Modules/auth/guards/facebook.guard';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
 import { LocalAuthGuard } from '@Modules/auth/guards/local-auth.guard';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
@@ -17,7 +18,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
-import { GetJwtPayloadUser } from 'src/common/decorators/get-user.decorator';
+import { GetJwtPayloadUserNoAuth } from 'src/common/decorators/get-user.decorator';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -28,7 +29,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard) //1./Tạo Guard để xác thực bằng passport-local
-  async authen(@GetJwtPayloadUser() user: any, @Req() req: Request) {
+  async authen(
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
+    @Req() req: Request,
+  ) {
     const device = req.headers['user-agent'];
     // 5./ Gọi hàm tạo JWT
     return await this.authService.login(user, device);
@@ -64,7 +68,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async signOutByDevice(
-    @GetJwtPayloadUser() user: JwtPayloadUser,
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
     @Body('device') device: string,
   ) {
     const result = await this.authService.revokeToken(user, device);
@@ -73,7 +77,7 @@ export class AuthController {
 
   @Post('logout/all')
   @UseGuards(JwtAuthGuard)
-  async signOutAllDevice(@GetJwtPayloadUser() user: JwtPayloadUser) {
+  async signOutAllDevice(@GetJwtPayloadUserNoAuth() user: JwtPayloadUser) {
     const result = await this.authService.revokeTokenAll(user);
     if (result) return { message: 'Đăng xuất thành công' };
   }
@@ -103,11 +107,28 @@ export class AuthController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   async changePassword(
-    @GetJwtPayloadUser() user: JwtPayloadUser,
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
     @Body() data: ChangePasswordDto,
     @Req() req: Request,
   ) {
     const device = req.headers['user-agent'];
     return await this.authService.changePasswordUser(user, data, device);
+  }
+
+  @Get('facebook')
+  @UseGuards(FacebookAuthGuard) // 1. Chỉ định bảo vệ là gì ?
+  async loginWithFacebook() {
+    // Mở trình duyệt gõ localhost:3000/auth/facebook
+    return HttpStatus.OK;
+  }
+
+  @Get('facebook/callback')
+  @UseGuards(FacebookAuthGuard)
+  async loginWithFacebookCallBack(
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
+    @Req() req: Request,
+  ) {
+    const device = req.headers['user-agent'];
+    return await this.authService.login(user, device);
   }
 }
