@@ -1,4 +1,5 @@
 import { FacebookStrategy } from '@Modules/auth/strategies/facebook.strategy';
+import { GoogleStartegy } from '@Modules/auth/strategies/google.strategy';
 import { jwtStrategy } from '@Modules/auth/strategies/jwt.strategy';
 import { LocalStrategy } from '@Modules/auth/strategies/local.strategy';
 import { MailModule } from '@Modules/mail/mail.module';
@@ -37,6 +38,12 @@ import { AuthService } from './auth.service';
     PrismaModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, jwtStrategy, FacebookStrategy], //3./ Áp dụng chiến lược cho moduule
+  providers: [
+    AuthService,
+    LocalStrategy, // Áp dụng chiến lược cho moduule
+    jwtStrategy, // Áp dụng chiến lược cho moduule
+    FacebookStrategy, // Áp dụng chiến lược cho moduule
+    GoogleStartegy, // Áp dụng chiến lược cho moduule
+  ],
 })
 export class AuthModule {}

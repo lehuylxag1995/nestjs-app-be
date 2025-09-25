@@ -22,6 +22,7 @@ import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 import { SocialType } from '@prisma/client';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { UserFacebookResponse } from '@Types/user-facebook-response.type';
+import { UserGoogleRespone } from '@Types/user-google-response.type';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -456,6 +457,88 @@ export class AuthService {
           userId: user.id,
         };
         return await this.userSocialService.updateSocial(updateSocialDto);
+      }
+    }
+  }
+
+  async craeteOrUpdateSocialGoogle(userGoogle: UserGoogleRespone) {
+    // Kiểm tra email có tồn tại trong CSDL
+    const userDb = await this.userSerivce.findUserByEmail(userGoogle.email);
+
+    // Trường hợp email không tồn tại
+    if (!userDb) {
+      return await this.prismaService.$transaction(async (prisma) => {
+        // Lấy quyền mặc định cho tài khoản
+        const role = await this.roleService.findRoleByName('CUSTOMER', prisma);
+
+        // Tạo mới user
+        const newUser = await prisma.user.create({
+          data: {
+            email: userGoogle.email,
+            roleId: role.id,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!newUser)
+          throw new BadRequestException('Không tạo được thông tin tài khoản !');
+
+        // Tạo mới social
+        const userSocialDto: CreateUserSocialDto = {
+          userId: newUser.id,
+          avatarUrl: userGoogle.photo,
+          displayName: userGoogle.displayName,
+          social: SocialType.GOOGLE,
+          socialId: userGoogle.googleId,
+        };
+        const social = await this.userSocialService.createSocial(
+          userSocialDto,
+          prisma,
+        );
+        if (!social)
+          throw new BadRequestException(
+            'Không tạo được tài khoản mạng xã hội !',
+          );
+
+        // Cập nhật xác thực email
+        await this.userSerivce.updateEmailVerify(newUser.id, prisma);
+
+        return social;
+      });
+    }
+    // Trường hợp email tồn tại
+    else {
+      // Kiểm tra social có tồn tại ?
+      const social = await this.userSocialService.findSocialUser(
+        userGoogle.googleId,
+        SocialType.GOOGLE,
+      );
+
+      // Social không tồn tại thì tạo mới
+      if (!social) {
+        // Tạo mới
+        const userSocialDto: CreateUserSocialDto = {
+          userId: userDb.id,
+          avatarUrl: userGoogle.photo,
+          displayName: userGoogle.displayName,
+          social: SocialType.GOOGLE,
+          socialId: userGoogle.googleId,
+        };
+        return await this.userSocialService.createSocial(userSocialDto);
+      }
+      // Social tồn tại thì cập nhật
+      else {
+        // Cập nhật thông tin mới
+        const userSocialDto: UpdateUserSocialDto = {
+          userId: userDb.id,
+          avatarUrl: userGoogle.photo,
+          displayName: userGoogle.displayName,
+          social: SocialType.GOOGLE,
+          socialId: userGoogle.googleId,
+        };
+        return await this.userSocialService.updateSocial(userSocialDto);
       }
     }
   }

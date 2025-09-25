@@ -2,6 +2,7 @@ import { ChangePasswordDto } from '@Modules/auth/dto/change-password';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
 import { FacebookAuthGuard } from '@Modules/auth/guards/facebook.guard';
+import { GoogleAuthGuard } from '@Modules/auth/guards/google.guard';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
 import { LocalAuthGuard } from '@Modules/auth/guards/local-auth.guard';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
@@ -125,6 +126,22 @@ export class AuthController {
   @Get('facebook/callback')
   @UseGuards(FacebookAuthGuard)
   async loginWithFacebookCallBack(
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
+    @Req() req: Request,
+  ) {
+    const device = req.headers['user-agent'];
+    return await this.authService.login(user, device);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async loginWithGoogle() {
+    return HttpStatus.OK;
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async loginWithGoogleCallback(
     @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
     @Req() req: Request,
   ) {
