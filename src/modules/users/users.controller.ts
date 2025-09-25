@@ -42,7 +42,7 @@ export class UsersController {
 
   @Get()
   @CheckPolicies((ability) => ability.can(Action.Read, 'User')) // Tạo điều kiện cho phép
-  findAll(@Query() params: PaginationUserDto, @Req() req) {
+  async findAll(@Query() params: PaginationUserDto, @Req() req) {
     return this.usersService.findAll(params, req.user);
   }
 
@@ -65,7 +65,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
@@ -73,19 +73,19 @@ export class UsersController {
   }
 
   @Patch(':id/CCCD/:cccd')
-  updateCCCD(
+  async updateCCCD(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('cccd') CCCD: string,
   ) {
-    return this.usersService.updateCCCD(id, CCCD);
+    return await this.usersService.updateCCCD(id, CCCD);
   }
 
   @Patch(':id/Active/:active')
-  updateActive(
+  async updateActive(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('active', ParseBoolPipe) isActive: boolean,
   ) {
-    return this.usersService.updateActive(id, isActive);
+    return await this.usersService.updateActive(id, isActive);
   }
 
   // @Patch(':id/Role/:role')
@@ -97,7 +97,7 @@ export class UsersController {
   // }
 
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.remove(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.usersService.remove(id);
   }
 }

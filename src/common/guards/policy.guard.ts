@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import {
   CHECK_POLICIES_KEY,
   PolicyHandler,
@@ -33,14 +34,14 @@ export class PoliciesGuard implements CanActivate {
 
     // Lấy thông tin người dùng qua JWT
     const req = context.switchToHttp().getRequest();
-    const userJWT = req.user;
+    const userJWT = req.user as JwtPayloadUser;
     if (!userJWT) {
       throw new UnauthorizedException('Bạn chưa đăng nhập tài khoản !');
     }
 
     // Tìm vai trò - quyền hạn trong DB
     const user = await this.userService.findUserWithPermissionOnRole(
-      userJWT.id,
+      userJWT.userId,
     );
 
     // Theo CASL phải khởi tạo ability cho người dùng đó

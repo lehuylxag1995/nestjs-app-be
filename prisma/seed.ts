@@ -62,11 +62,11 @@ async function main() {
   console.log('🚀 Start seeding...');
   await runThongTinCoBan();
 
-  await luongNhapHang();
-  await luongImportKho();
+  // await luongNhapHang();
+  // await luongImportKho();
 
-  await luongBanHang();
-  await luongExportKho();
+  // await luongBanHang();
+  // await luongExportKho();
 }
 
 main()
