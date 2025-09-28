@@ -86,7 +86,8 @@ export class AuthService {
   async resendOtpEmailVerifyUser(email: string) {
     try {
       // Tìm User
-      const user = await this.userSerivce.findUserByEmailOrThrow(email);
+      const user = await this.userSerivce.findUserByEmail(email);
+      if (!user) throw new BadRequestException('Email Không tồn tại !');
 
       // Tạo Otp
       const otp = await this.otpService.createOtp(
@@ -113,7 +114,9 @@ export class AuthService {
   async registerUser(body: CreateUserDto) {
     try {
       //Tạo User
-      const user = await this.userSerivce.create(body);
+      const user = await this.userSerivce.createUser(body);
+      if (!user || !user.name)
+        throw new BadRequestException('Đăng ký tài khoản bị lỗi !');
 
       // Tạo OTP: Email Verify cho User
       const otp = await this.otpService.createOtp(
@@ -122,7 +125,7 @@ export class AuthService {
       );
 
       // Gửi mail xác thực
-      // const result = await this.mailService.sendConfirmEmailRegister(
+      // await this.mailService.sendConfirmEmailRegister(
       //   user.email,
       //   user.name,
       //   otp,

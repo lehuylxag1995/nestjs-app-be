@@ -20,7 +20,9 @@
       "@Interfaces/*": ["src/common/interfaces/*"],
       "@Enums/*": ["src/common/enums/*"],
       "@Constraints/*": ["src/common/constraint/*"],
-      "@Configs/*": ["src/common/configs/*"]
+      "@Configs/*": ["src/common/configs/*"],
+      "@Exceptions/*": ["src/common/exceptions/*"],
+      "@Filters/*": ["src/common/filters/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

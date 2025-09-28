@@ -16,23 +16,22 @@ export class OtpService {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpHash = await bcrypt.hash(otp, 10);
 
-      // let expiresAt = new Date();
-      // switch (purpose) {
-      //   case OtpPurposeEnum.EMAIL_VERIFY:
-      //     const timeVerifyEmail =
-      //       this.configService.get<number>('OTP_EXPIRE_EMAIL_VERIFY') ?? 1;
-      //     expiresAt = new Date(Date.now() + 1000 * 60 * timeVerifyEmail);
-      //     break;
-      //   case OtpPurposeEnum.RESET_PASSWORD:
-      //     const timeResetPassword =
-      //       this.configService.get<number>('OTP_EXPIRE_RESET_PASSWORD') ?? 1;
-      //     expiresAt = new Date(Date.now() + 1000 * 60 * timeResetPassword);
-      //   default:
-      //     break;
-      // }
+      let expiresAt = new Date();
+      switch (purpose) {
+        case OtpPurposeEnum.EMAIL_VERIFY:
+          const timeVerifyEmail =
+            this.configService.get<number>('OTP_EXPIRE_EMAIL_VERIFY') ?? 1;
+          expiresAt = new Date(Date.now() + 1000 * 60 * timeVerifyEmail);
+          break;
+        case OtpPurposeEnum.RESET_PASSWORD:
+          const timeResetPassword =
+            this.configService.get<number>('OTP_EXPIRE_RESET_PASSWORD') ?? 1;
+          expiresAt = new Date(Date.now() + 1000 * 60 * timeResetPassword);
+        default:
+          break;
+      }
 
-      // const  expiresAt = new Date(Date.now() + 1000 * 60 * timeVerifyEmail);
-      const expiresAt = new Date(Date.now() + 1000 * 10);
+      // const expiresAt = new Date(Date.now() + 1000 * 10);
 
       const result = await this.prismaService.otpVerification.create({
         data: {

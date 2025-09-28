@@ -3,101 +3,72 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
-  ParseBoolPipe,
   ParseUUIDPipe,
   Patch,
   Post,
   Put,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 
 import { GetJwtPayloadUserNoAuth } from '@Decorators/get-user.decorator';
 import { JwtAuthGuard } from '@Modules/auth/guards/jwt-auth.guard';
-import { Action } from '@Modules/casl/casl-ability.factory';
-import { User } from '@prisma/client';
-import { CheckPolicies } from 'src/common/decorators/check-policy.decorator';
-import { PoliciesGuard } from 'src/common/guards/policy.guard';
+import { UpdateUserPartialDto } from '@Modules/users/dto/update-user-partial.dto';
+import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, PoliciesGuard) // PoliciesGuard: Tạo ability theo DB
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @CheckPolicies((ability) => ability.can(Action.Create, 'User'))
-  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    return this.usersService.createUser(createUserDto);
   }
 
   @Get()
-  @CheckPolicies((ability) => ability.can(Action.Read, 'User')) // Tạo điều kiện cho phép
-  async findAll(@Query() params: PaginationUserDto, @Req() req) {
-    return this.usersService.findAll(params, req.user);
+  async findAll(
+    @Query() params: PaginationUserDto,
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
+  ) {
+    return this.usersService.findAll(params, user);
+  }
+
+  @Get('me')
+  async findMe(@GetJwtPayloadUserNoAuth() user: JwtPayloadUser) {
+    const userDb = await this.usersService.findOne(user.userId);
+    return userDb;
   }
 
   @Get(':id')
-  @CheckPolicies((ability) => ability.can(Action.Read, 'User'))
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetJwtPayloadUserNoAuth() currentUser: User, // Lấy user hiện tại từ JWT token
-  ) {
-    // Kiểm tra xem id được ysêu cầu có phải là của user hiện tại không
-    if (id !== currentUser.id) {
-      throw new ForbiddenException(
-        'Bạn chỉ có thể truy cập thông tin của chính mình',
-      );
-    }
-
+  async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     const user = await this.usersService.findOne(id);
-
     return user;
+  }
+
+  @Patch('me')
+  async updatePartial(
+    @GetJwtPayloadUserNoAuth() user: JwtPayloadUser,
+    @Body() updateUserPartialDto: UpdateUserPartialDto,
+  ) {
+    return this.usersService.updatePartial(user.userId, updateUserPartialDto);
   }
 
   @Put(':id')
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @Patch(':id/CCCD/:cccd')
-  async updateCCCD(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('cccd') CCCD: string,
-  ) {
-    return await this.usersService.updateCCCD(id, CCCD);
-  }
-
-  @Patch(':id/Active/:active')
-  async updateActive(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('active', ParseBoolPipe) isActive: boolean,
-  ) {
-    return await this.usersService.updateActive(id, isActive);
-  }
-
-  // @Patch(':id/Role/:role')
-  // updateRole(
-  //   @Param('id', ParseUUIDPipe) id: string,
-  //   @Param('role', new ParseEnumPipe(UserRole)) role: UserRole,
-  // ) {
-  //   return this.usersService.updateRole(id, role);
-  // }
-
   @Delete(':id')
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return await this.usersService.remove(id);
   }
 }

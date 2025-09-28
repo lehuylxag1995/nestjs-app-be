@@ -1,18 +1,15 @@
-import { permittedFieldsOf } from '@casl/ability/extra';
-import { accessibleBy } from '@casl/prisma';
-import { Action, CaslAbilityFactory } from '@Modules/casl/casl-ability.factory';
+import { CaslAbilityFactory } from '@Modules/casl/casl-ability.factory';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { RolesService } from '@Modules/roles/roles.service';
 import { PaginationUserDto } from '@Modules/users/dto/pagination-user.dto';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { UpdateUserPartialDto } from '@Modules/users/dto/update-user-partial.dto';
+import { UserConflictException } from '@Modules/users/exceptions/user-conflict.exception';
+import { UserNotFoundException } from '@Modules/users/exceptions/user-not-found.exception';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import * as bcrypt from 'bcrypt';
-import { createPrismaSelect } from 'src/common/utils/casl-prisma.helper';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -24,7 +21,7 @@ export class UsersService {
     private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto) {
     try {
       // Tìm role mặc định là customer cho tài khoản
       const roleCustomer = await this.roleService.findRoleByName('CUSTOMER');
@@ -49,38 +46,19 @@ export class UsersService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException(`${error.meta?.target} đã tồn tại`);
+          throw new UserConflictException({
+            field: error.meta?.target as string,
+          });
         }
       }
       throw error; // để service throw ra luôn
     }
   }
 
-  async findUserByEmailOrThrow(email: string, tx?: Prisma.TransactionClient) {
-    const prisma = tx ?? this.prismaService;
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        roleId: true,
-      },
-    });
-
-    if (!user)
-      throw new BadRequestException(
-        'Không tìm thấy tài khoản người dùng của email này !',
-      );
-
-    return user;
-  }
-
   async findUserByEmail(email: string, tx?: Prisma.TransactionClient) {
     const prisma = tx ?? this.prismaService;
 
-    return await prisma.user.findUnique({
+    const result = await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
@@ -89,21 +67,12 @@ export class UsersService {
         roleId: true,
       },
     });
+
+    if (!result) throw new UserNotFoundException({ identity: email });
+    return result;
   }
 
-  async findAll(paginationUserDto: PaginationUserDto, user: any) {
-    const userWithRole = await this.findUserWithPermissionOnRole(user.id);
-    // Where theo casl
-    const ability = this.caslAbilityFactory.createForUser(userWithRole);
-    const caslWhere = accessibleBy(ability).User;
-
-    // Select theo casl
-    const allowedFields = permittedFieldsOf(ability, Action.Read, 'User', {
-      fieldsFrom: (rule) =>
-        rule.fields || Object.keys(Prisma.UserScalarFieldEnum),
-    });
-    const selectFields = createPrismaSelect<User>(allowedFields);
-
+  async findAll(paginationUserDto: PaginationUserDto, user: JwtPayloadUser) {
     const { page, pageSize, keyword } = paginationUserDto;
     const searchWhere: Prisma.UserWhereInput = keyword
       ? {
@@ -116,18 +85,13 @@ export class UsersService {
         }
       : {};
 
-    const finalWhere: Prisma.UserWhereInput = {
-      AND: [caslWhere, searchWhere],
-    };
-
     const [data, totalItems] = await this.prismaService.$transaction([
       this.prismaService.user.findMany({
         skip: (page - 1) * pageSize,
         take: pageSize,
-        where: finalWhere,
-        select: selectFields,
+        where: searchWhere,
       }),
-      this.prismaService.user.count({ where: finalWhere }),
+      this.prismaService.user.count({ where: searchWhere }),
     ]);
 
     return {
@@ -141,15 +105,18 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string) {
-    const user = await this.prismaService.user.findUnique({
+  async findOne(id: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
+
+    const user = await prisma.user.findUnique({
       where: { id },
       omit: {
         createdAt: true,
         updatedAt: true,
-        // password: true,
       },
     });
+
+    if (!user) throw new UserNotFoundException({ identity: id });
 
     return user;
   }
@@ -166,6 +133,8 @@ export class UsersService {
       },
     });
 
+    if (!user) throw new UserNotFoundException({ identity: username });
+
     return user;
   }
 
@@ -173,27 +142,37 @@ export class UsersService {
     try {
       await this.findOne(id);
 
-      if (updateUserDto.password) {
-        const saltOrRounds = 10;
-        const hash = await bcrypt.hash(updateUserDto.password, saltOrRounds);
-        updateUserDto.password = hash;
-      }
-
       return await this.prismaService.user.update({
         where: { id },
         data: updateUserDto,
         omit: {
           createdAt: true,
           updatedAt: true,
-          isActive: true,
-          roleId: true,
-          password: true,
         },
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
+          throw new UserConflictException({
+            field: error.meta?.target as string,
+          });
+        }
+      }
+    }
+  }
+
+  async updatePartial(id: string, updateUserDto: UpdateUserPartialDto) {
+    try {
+      return await this.prismaService.user.update({
+        where: { id },
+        data: updateUserDto,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new UserConflictException({
+            field: error.meta?.target as string,
+          });
         }
       }
     }
@@ -214,69 +193,25 @@ export class UsersService {
     });
   }
 
-  async updateCCCD(id: string, CCCD: string) {
-    try {
-      return await this.prismaService.user.update({
-        where: { id },
-        data: { CCCD },
-        omit: {
-          createdAt: true,
-          updatedAt: true,
-          isActive: true,
-          roleId: true,
-          password: true,
-        },
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
-        }
-      }
-    }
-  }
-
-  async updateActive(id: string, isActive: boolean) {
-    try {
-      return await this.prismaService.user.update({
-        where: { id },
-        data: { isActive },
-        omit: {
-          createdAt: true,
-          updatedAt: true,
-          roleId: true,
-          password: true,
-        },
-      });
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new BadRequestException(`${error.meta?.target} đã tồn tại`);
-        }
-      }
-    }
-  }
-
   async updateEmailVerify(id: string, tx?: Prisma.TransactionClient) {
-    try {
-      const prisma = tx ?? this.prismaService;
+    const prisma = tx ?? this.prismaService;
 
-      const user = await prisma.user.findUnique({ where: { id } });
+    const user = await this.findOne(id, prisma);
 
-      return await prisma.user.update({
-        where: { id },
-        data: {
-          emailVerify: !user?.emailVerify,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    return await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerify: !user.emailVerify,
+      },
+    });
   }
 
-  async findUserWithPermissionOnRole(userId: string) {
-    const user = await this.prismaService.user.findUnique({
+  async findUserWithPermissionOnRole(
+    userId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const prisma = tx || this.prismaService;
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         Role: {
@@ -288,8 +223,8 @@ export class UsersService {
         },
       },
     });
-    if (!user) throw new BadRequestException('Không tìm thấy tài khoản !');
 
+    if (!user) throw new UserNotFoundException({ identity: userId });
     return user;
   }
 
@@ -298,19 +233,14 @@ export class UsersService {
     password: string,
     tx?: Prisma.TransactionClient,
   ) {
-    try {
-      const prisma = tx ?? this.prismaService;
-      await this.findOne(id);
+    const prisma = tx ?? this.prismaService;
+    const user = await this.findOne(id, prisma);
 
-      return await prisma.user.update({
-        where: { id },
-        data: {
-          password,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    return await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password,
+      },
+    });
   }
 }

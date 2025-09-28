@@ -1,3 +1,4 @@
+import { DomainToHttpExceptionFilter } from '@Filters/http-exception.filter';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
@@ -54,6 +55,10 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Áp dụng filter để lọc DomainException(mình tự tạo) -> giao thức HTTP,
+  // Có thể mở rộng giao thức khác...
+  app.useGlobalFilters(new DomainToHttpExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 

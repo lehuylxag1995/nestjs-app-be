@@ -112,6 +112,7 @@ export class AuthController {
     @Body() data: ChangePasswordDto,
     @Req() req: Request,
   ) {
+    // console.log(user);
     const device = req.headers['user-agent'];
     return await this.authService.changePasswordUser(user, data, device);
   }
