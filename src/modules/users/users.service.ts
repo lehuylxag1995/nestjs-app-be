@@ -48,6 +48,7 @@ export class UsersService {
         if (error.code === 'P2002') {
           throw new UserConflictException({
             field: error.meta?.target as string,
+            code: 'CREATE_USER_UNIQUE',
           });
         }
       }

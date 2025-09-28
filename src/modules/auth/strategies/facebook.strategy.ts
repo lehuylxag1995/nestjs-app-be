@@ -1,6 +1,7 @@
 import { AuthService } from '@Modules/auth/auth.service';
+import { AuthBadRequestException } from '@Modules/auth/exceptions/auth-notfound.exception';
 import { UsersService } from '@Modules/users/users.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
@@ -51,14 +52,16 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     const userSocial =
       await this.authService.craeteOrUpdateSocialFacebook(userFacebook);
     if (!userSocial)
-      throw new BadRequestException('Tạo liên kết mạng xã hội thất bại !');
+      throw new AuthBadRequestException({
+        message: 'Tạo liên kết mạng xã hội thất bại !',
+      });
 
     //Lấy thông tin để tạo Jwt trong App
     const user = await this.userService.findOne(userSocial.userId);
     if (!user)
-      throw new BadRequestException(
-        'Không tìm thấy tài khoản sau khi liên kết',
-      );
+      throw new AuthBadRequestException({
+        message: 'Không tìm thấy tài khoản sau khi liên kết',
+      });
 
     // Trả về jwt chung của app
     const result: JwtPayloadUser = {

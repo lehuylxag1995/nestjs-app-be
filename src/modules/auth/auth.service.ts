@@ -9,6 +9,7 @@ import { RolesService } from '@Modules/roles/roles.service';
 import { TokenService } from '@Modules/token/token.service';
 import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
 import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
+import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-sociala.exception';
 import { UserSocialService } from '@Modules/user-provider/user-social.service';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
 import { UsersService } from '@Modules/users/users.service';
@@ -431,11 +432,18 @@ export class AuthService {
     }
     // 4. Nếu email đã tồn tại thì tạo userSocial
     else {
-      //4.1 Check social có tồn tại ?
-      const social = await this.userSocialService.findSocialUser(
-        userFacebook.facebookId,
-        SocialType.FACEBOOK,
-      );
+      let social: any = null;
+      try {
+        //4.1 Check social có tồn tại ?
+        social = await this.userSocialService.findSocialUser(
+          userFacebook.facebookId,
+          SocialType.FACEBOOK,
+        );
+      } catch (error) {
+        if (error instanceof UserSocialBadRequestException) {
+          social = null; // Bỏ qua SpecialError(DomainError) để làm nghiệp vụ
+        } else throw error;
+      }
 
       // 4.2 Social không tồn tại
       if (!social) {
@@ -446,11 +454,12 @@ export class AuthService {
           userId: user.id,
           avatarUrl: userFacebook.picture,
         };
+
         return await this.userSocialService.createSocial(reqSocialDto);
       }
       // 4.3 Social tồn tại thì chỉ update
       else {
-        const updateSocialDto: UpdateUserSocialDto = {
+        const data: UpdateUserSocialDto = {
           //update
           displayName: userFacebook.displayName,
           avatarUrl: userFacebook.picture,
@@ -459,7 +468,7 @@ export class AuthService {
           socialId: userFacebook.facebookId,
           userId: user.id,
         };
-        return await this.userSocialService.updateSocial(updateSocialDto);
+        return await this.userSocialService.updateSocial(social.id, data);
       }
     }
   }
@@ -513,11 +522,18 @@ export class AuthService {
     }
     // Trường hợp email tồn tại
     else {
-      // Kiểm tra social có tồn tại ?
-      const social = await this.userSocialService.findSocialUser(
-        userGoogle.googleId,
-        SocialType.GOOGLE,
-      );
+      let social: any = null;
+      try {
+        // Kiểm tra social có tồn tại ?
+        social = await this.userSocialService.findSocialUser(
+          userGoogle.googleId,
+          SocialType.GOOGLE,
+        );
+      } catch (error) {
+        if (error instanceof UserSocialBadRequestException) {
+          // Bỏ qua SpecialError(DomainError) để làm nghiệp vụ
+        } else throw error;
+      }
 
       // Social không tồn tại thì tạo mới
       if (!social) {
@@ -541,7 +557,10 @@ export class AuthService {
           social: SocialType.GOOGLE,
           socialId: userGoogle.googleId,
         };
-        return await this.userSocialService.updateSocial(userSocialDto);
+        return await this.userSocialService.updateSocial(
+          social.id,
+          userSocialDto,
+        );
       }
     }
   }

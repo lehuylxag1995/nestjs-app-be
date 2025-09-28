@@ -1,4 +1,9 @@
-import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
-import { PartialType } from '@nestjs/mapped-types';
+import { SocialType } from '@prisma/client';
 
-export class UpdateUserSocialDto extends PartialType(CreateUserSocialDto) {}
+export class UpdateUserSocialDto {
+  social: SocialType;
+  socialId: string;
+  displayName: string;
+  userId: string;
+  avatarUrl: string;
+}

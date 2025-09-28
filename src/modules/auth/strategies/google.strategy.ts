@@ -2,6 +2,7 @@ import { AuthService } from '@Modules/auth/auth.service';
 import { UsersService } from '@Modules/users/users.service';
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -46,6 +47,7 @@ export class GoogleStartegy extends PassportStrategy(Strategy, 'google') {
     //Liên kết hoặc tạo mới
     const social =
       await this.authService.craeteOrUpdateSocialGoogle(profileGoogle);
+    if (!social) throw new BadRequestException('temp ở google strategy');
 
     // Lấy thông tin user
     const userDb = await this.userService.findOne(social.userId);
