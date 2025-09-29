@@ -3,6 +3,7 @@ import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-soci
 import { UpdatePartialUserSocialDto } from '@Modules/user-provider/dto/update-partial-user-social.dto';
 import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
 import { UserSocialConflictException } from '@Modules/user-provider/exceptions/user-social-conflict.exception';
+import { UserSocialNotFoundException } from '@Modules/user-provider/exceptions/user-social-notfound.exception';
 import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-sociala.exception';
 import { Injectable } from '@nestjs/common';
 import { Prisma, SocialType } from '@prisma/client';
@@ -74,15 +75,25 @@ export class UserSocialService {
     }
   }
 
-  async deleteSocial(socialId: string, social: SocialType) {
-    const userSocial = await this.findSocialUser(socialId, social);
-
+  async deleteSocial(id: string) {
     return await this.prismaService.userSocial.delete({
-      where: { id: userSocial.id },
+      where: { id },
     });
   }
 
-  async findSocialUser(socialId: string, social: SocialType) {
+  async findOne(id: string) {
+    const result = await this.prismaService.userSocial.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!result) throw new UserSocialNotFoundException({ identity: id });
+
+    return result;
+  }
+
+  async findOneBySocial(socialId: string, social: SocialType) {
     const result = await this.prismaService.userSocial.findUnique({
       where: {
         social_socialId: { social, socialId },

@@ -435,7 +435,7 @@ export class AuthService {
       let social: any = null;
       try {
         //4.1 Check social có tồn tại ?
-        social = await this.userSocialService.findSocialUser(
+        social = await this.userSocialService.findOneBySocial(
           userFacebook.facebookId,
           SocialType.FACEBOOK,
         );
@@ -525,7 +525,7 @@ export class AuthService {
       let social: any = null;
       try {
         // Kiểm tra social có tồn tại ?
-        social = await this.userSocialService.findSocialUser(
+        social = await this.userSocialService.findOneBySocial(
           userGoogle.googleId,
           SocialType.GOOGLE,
         );
