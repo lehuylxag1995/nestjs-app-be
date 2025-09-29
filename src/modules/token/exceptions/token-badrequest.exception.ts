@@ -1,15 +1,16 @@
 import { BaseBadRequestException } from '@Exceptions/bad-request.exception';
 import { IBaseBadRequestException } from '@Interfaces/base-exceptions.interface';
-interface IUserSocialBadRequestException extends IBaseBadRequestException {
+
+interface ITokenBadRequestException extends IBaseBadRequestException {
   code?: string;
 }
 
-export class UserSocialBadRequestException extends BaseBadRequestException {
+export class TokenBadRequestException extends BaseBadRequestException {
   public readonly code?: string;
-  constructor(options: IUserSocialBadRequestException = {}) {
+  constructor(options: ITokenBadRequestException) {
     const { field, message, resource, code } = options;
 
-    const defaultResource = resource || `Tài khoản mạng xã hội`;
+    const defaultResource = resource || `Token`;
 
     super({ field, message, resource: defaultResource });
 

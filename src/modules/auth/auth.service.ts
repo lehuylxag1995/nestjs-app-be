@@ -6,6 +6,7 @@ import { MailService } from '@Modules/mail/mail.service';
 import { OtpService } from '@Modules/otp/otp.service';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { RolesService } from '@Modules/roles/roles.service';
+import { CreateTokenDto } from '@Modules/token/dto/create-token.dto';
 import { TokenService } from '@Modules/token/token.service';
 import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
 import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
@@ -64,11 +65,12 @@ export class AuthService {
         await this.tokenService.generateToken(userJwtPayload);
 
       // Lưu refresh token (đã hash) vào DB
-      const tokenStored = await this.tokenService.createToken(
-        userJwtPayload.userId,
-        refresh_token,
+      const reqToken: CreateTokenDto = {
+        tokenHash: refresh_token,
         device,
-      );
+        userId: userJwtPayload.userId,
+      };
+      const tokenStored = await this.tokenService.createToken(reqToken);
       if (!tokenStored) {
         throw new BadRequestException(
           'Không tạo được token cho tài khoản này !',
@@ -225,7 +227,7 @@ export class AuthService {
         await this.tokenService.generateToken(newPayload);
 
       // 7. Cập nhật refresh token trong DB
-      await this.tokenService.update(storedToken.id, refresh_token);
+      await this.tokenService.refreshTokenHash(storedToken.id, refresh_token);
 
       return {
         access_token,

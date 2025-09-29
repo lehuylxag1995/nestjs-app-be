@@ -1,11 +1,7 @@
 import { DomainException } from '@Exceptions/doamin.exception';
+import { IBaseBadRequestException } from '@Interfaces/base-exceptions.interface';
 import { HttpStatus } from '@nestjs/common';
 
-interface IBaseBadRequestException {
-  message?: string;
-  resource?: string;
-  field?: string | string[];
-}
 export abstract class BaseBadRequestException extends DomainException {
   constructor({ message, resource, field }: IBaseBadRequestException) {
     let defaultMessage = `Dữ liệu không hợp lệ`;

@@ -1,5 +1,9 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { CreateTokenDto } from '@Modules/token/dto/create-token.dto';
+import { TokenBadRequestException } from '@Modules/token/exceptions/token-badrequest.exception';
+import { TokenConflictException } from '@Modules/token/exceptions/token-conflict.exception';
+import { TokenNotFoundException } from '@Modules/token/exceptions/token-notfound.exception';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
@@ -33,10 +37,11 @@ export class TokenService {
     return { access_token, refresh_token };
   }
 
-  async createToken(userId: string, refreshToken: string, device?: string) {
+  async createToken(data: CreateTokenDto) {
+    const { tokenHash, userId, device } = data;
     try {
       //Mã hóa token bằng sha256 luôn 64 ký tự hex
-      const tokenHash = this.sha256(refreshToken);
+      const newTokenHash = this.sha256(tokenHash);
 
       // Thời hạn refresh_token là 7 ngày
       const expiresAt = new Date();
@@ -55,11 +60,11 @@ export class TokenService {
           },
         },
         update: {
-          tokenHash,
+          tokenHash: newTokenHash,
           expiresAt,
         },
         create: {
-          tokenHash,
+          tokenHash: newTokenHash,
           expiresAt,
           device: deviceName,
           userId,
@@ -68,9 +73,9 @@ export class TokenService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new BadRequestException(
-            `Lỗi: ${error.meta?.target} đã tồn tại trong DB !`,
-          );
+          throw new TokenConflictException({
+            field: error.meta?.target as string,
+          });
         }
       }
     }
@@ -80,6 +85,8 @@ export class TokenService {
     const tokens = await this.prismaService.refreshToken.findMany({
       where: { userId },
     });
+
+    if (!tokens) throw new TokenNotFoundException({ identity: userId });
 
     for (const token of tokens) {
       const preHashVerify = this.sha256(refreshTokenHash);
@@ -93,12 +100,14 @@ export class TokenService {
     const data = await this.prismaService.refreshToken.findUnique({
       where: { id },
     });
-    if (!data) throw new BadRequestException('Không tìm thấy token');
+
+    if (!data) throw new TokenNotFoundException({ identity: id });
+
     return data;
   }
 
-  async update(id: string, new_refresh_token: string) {
-    await this.findOne(id);
+  async refreshTokenHash(id: string, new_refresh_token: string) {
+    const token = await this.findOne(id);
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -107,7 +116,7 @@ export class TokenService {
 
     return await this.prismaService.refreshToken.update({
       where: {
-        id,
+        id: token.id,
       },
       data: {
         tokenHash,
@@ -129,7 +138,7 @@ export class TokenService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
-          throw new BadRequestException('Không tìm thấy userId và thiết bị');
+          throw new TokenBadRequestException({ field: [userId, device] });
         }
       }
       throw error;
@@ -143,7 +152,11 @@ export class TokenService {
         where: { userId },
       });
     } catch (error) {
-      console.log(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new TokenBadRequestException({ field: [userId] });
+        }
+      }
       throw error;
     }
   }

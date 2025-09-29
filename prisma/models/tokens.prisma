@@ -5,6 +5,7 @@ model RefreshToken {
     device    String? // ví dụ: 'Chrome-Win10', 'iPhone'
     userId    String
     createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

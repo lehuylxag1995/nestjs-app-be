@@ -1,11 +1,7 @@
 import { DomainException } from '@Exceptions/doamin.exception';
+import { IBaseConflictException } from '@Interfaces/base-exceptions.interface';
 import { HttpStatus } from '@nestjs/common';
 
-interface IBaseConflictException {
-  message?: string;
-  resource?: string;
-  field?: string;
-}
 export abstract class BaseConflictException extends DomainException {
   constructor({ message, field, resource }: IBaseConflictException) {
     const defaultMessage =

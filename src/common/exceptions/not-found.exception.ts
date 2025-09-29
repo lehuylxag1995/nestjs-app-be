@@ -1,11 +1,6 @@
 import { DomainException } from '@Exceptions/doamin.exception';
+import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
 import { HttpStatus } from '@nestjs/common';
-
-export interface IBaseNotFoundExceptionOptions {
-  resource: string;
-  identity?: string;
-  message?: string;
-}
 
 //Base[...]Exception quản lý chung: thông báo, httpstatus
 export abstract class BaseNotFoundException extends DomainException {
@@ -13,7 +8,7 @@ export abstract class BaseNotFoundException extends DomainException {
     resource,
     identity,
     message,
-  }: IBaseNotFoundExceptionOptions) {
+  }: IBaseNotFoundException) {
     const defaultMessage =
       message ||
       `${resource} không tìm thấy${identity ? ` với định danh ${identity}` : ''}`;

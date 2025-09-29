@@ -1,8 +1,6 @@
 import { BaseNotFoundException } from '@Exceptions/not-found.exception';
-interface IUserNotFoundException {
-  identity?: string;
-  message?: string;
-  resource?: string;
+import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
+interface IUserNotFoundException extends IBaseNotFoundException {
   code?: string;
 }
 

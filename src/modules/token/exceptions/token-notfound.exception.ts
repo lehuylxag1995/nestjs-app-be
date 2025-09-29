@@ -1,17 +1,17 @@
 import { BaseNotFoundException } from '@Exceptions/not-found.exception';
 import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
 
-interface IRoleNotFoundException extends IBaseNotFoundException {
+interface ITokenNotFoundException extends IBaseNotFoundException {
   code?: string;
 }
 
-export class RoleNotFoundException extends BaseNotFoundException {
+export class TokenNotFoundException extends BaseNotFoundException {
   public readonly code?: string;
 
-  constructor(options: IRoleNotFoundException) {
-    const { resource, identity, message, code } = options;
+  constructor(params: ITokenNotFoundException = {}) {
+    const { code, identity, message, resource } = params;
 
-    const defaultResource = resource || 'Vai trò';
+    const defaultResource = resource || `Token`;
 
     super({ resource: defaultResource, identity, message });
 

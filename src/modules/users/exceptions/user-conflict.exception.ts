@@ -1,9 +1,7 @@
 import { BaseConflictException } from '@Exceptions/conflict.exception';
+import { IBaseConflictException } from '@Interfaces/base-exceptions.interface';
 
-interface IUserConflictException {
-  message?: string;
-  resource?: string;
-  field: string;
+interface IUserConflictException extends IBaseConflictException {
   code?: string;
 }
 export class UserConflictException extends BaseConflictException {

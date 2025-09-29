@@ -1,10 +1,7 @@
+import { IDomainException } from '@Interfaces/base-exceptions.interface';
 import { HttpStatus } from '@nestjs/common';
 
 // Tạo tham số cho Domain
-export interface IDomainExceptionOptions {
-  message: string;
-  httpStatus: HttpStatus;
-}
 
 // Bạn muốn code ném ra lỗi cụ thể như UserNotFoundException, không phải new DomainException("Có lỗi xảy ra")
 export abstract class DomainException extends Error {
@@ -14,7 +11,7 @@ export abstract class DomainException extends Error {
   constructor({
     httpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
     message,
-  }: IDomainExceptionOptions) {
+  }: IDomainException) {
     // Gọi constructor của Error, truyền message
     super(message);
 
