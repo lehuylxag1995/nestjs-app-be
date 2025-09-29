@@ -1,9 +1,7 @@
 import { BaseConflictException } from '@Exceptions/conflict.exception';
-import { IBaseConflictException } from '@Interfaces/base-exceptions.interface';
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
 
-interface IUserSocialConflictException extends IBaseConflictException {
-  code?: string;
-}
+interface IUserSocialConflictException extends IBaseSpecialException {}
 
 export class UserSocialConflictException extends BaseConflictException {
   public readonly code?: string;

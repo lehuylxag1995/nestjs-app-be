@@ -1,19 +1,17 @@
 import { BaseNotFoundException } from '@Exceptions/not-found.exception';
-import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
 
-interface ITokenNotFoundException extends IBaseNotFoundException {
-  code?: string;
-}
+interface ITokenNotFoundException extends IBaseSpecialException {}
 
 export class TokenNotFoundException extends BaseNotFoundException {
   public readonly code?: string;
 
   constructor(params: ITokenNotFoundException = {}) {
-    const { code, identity, message, resource } = params;
+    const { code, field, message, resource } = params;
 
     const defaultResource = resource || `Token`;
 
-    super({ resource: defaultResource, identity, message });
+    super({ resource: defaultResource, field, message });
 
     this.code = code;
   }

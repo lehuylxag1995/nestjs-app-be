@@ -1,14 +1,15 @@
 import { BaseBadRequestException } from '@Exceptions/bad-request.exception';
 import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
 
-interface ITokenBadRequestException extends IBaseSpecialException {}
+interface IRoleBadRequestException extends IBaseSpecialException {}
 
-export class TokenBadRequestException extends BaseBadRequestException {
+export class RoleBadRequestException extends BaseBadRequestException {
   public readonly code?: string;
-  constructor(options: ITokenBadRequestException) {
+
+  constructor(options: IRoleBadRequestException = {}) {
     const { field, message, resource, code } = options;
 
-    const defaultResource = resource || `Token`;
+    const defaultResource = resource || `Vai trò`;
 
     super({ field, message, resource: defaultResource });
 

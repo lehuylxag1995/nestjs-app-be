@@ -69,7 +69,7 @@ export class UsersService {
       },
     });
 
-    if (!result) throw new UserNotFoundException({ identity: email });
+    if (!result) throw new UserNotFoundException({ field: email });
     return result;
   }
 
@@ -117,7 +117,7 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new UserNotFoundException({ identity: id });
+    if (!user) throw new UserNotFoundException({ field: id });
 
     return user;
   }
@@ -134,7 +134,7 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new UserNotFoundException({ identity: username });
+    if (!user) throw new UserNotFoundException({ field: username });
 
     return user;
   }
@@ -225,7 +225,7 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new UserNotFoundException({ identity: userId });
+    if (!user) throw new UserNotFoundException({ field: userId });
     return user;
   }
 

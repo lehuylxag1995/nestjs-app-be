@@ -1,11 +1,11 @@
 import { BaseBadRequestException } from '@Exceptions/bad-request.exception';
-import { IBaseBadRequestException } from '@Interfaces/base-exceptions.interface';
-interface IUserSocialBadRequestException extends IBaseBadRequestException {
-  code?: string;
-}
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
+
+interface IUserSocialBadRequestException extends IBaseSpecialException {}
 
 export class UserSocialBadRequestException extends BaseBadRequestException {
   public readonly code?: string;
+
   constructor(options: IUserSocialBadRequestException = {}) {
     const { field, message, resource, code } = options;
 

@@ -1,9 +1,7 @@
 import { BaseConflictException } from '@Exceptions/conflict.exception';
-import { IBaseConflictException } from '@Interfaces/base-exceptions.interface';
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
 
-interface ITokenConflictException extends IBaseConflictException {
-  code?: string;
-}
+interface ITokenConflictException extends IBaseSpecialException {}
 
 export class TokenConflictException extends BaseConflictException {
   public readonly code?: string;

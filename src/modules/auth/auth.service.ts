@@ -10,7 +10,7 @@ import { CreateTokenDto } from '@Modules/token/dto/create-token.dto';
 import { TokenService } from '@Modules/token/token.service';
 import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
 import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
-import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-sociala.exception';
+import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-social-badrequest.exception';
 import { UserSocialService } from '@Modules/user-provider/user-social.service';
 import { CreateUserDto } from '@Modules/users/dto/create-user.dto';
 import { UsersService } from '@Modules/users/users.service';

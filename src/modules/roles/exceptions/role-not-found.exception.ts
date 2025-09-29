@@ -1,19 +1,17 @@
 import { BaseNotFoundException } from '@Exceptions/not-found.exception';
-import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
 
-interface IRoleNotFoundException extends IBaseNotFoundException {
-  code?: string;
-}
+interface IRoleNotFoundException extends IBaseSpecialException {}
 
 export class RoleNotFoundException extends BaseNotFoundException {
   public readonly code?: string;
 
   constructor(options: IRoleNotFoundException) {
-    const { resource, identity, message, code } = options;
+    const { resource, field, message, code } = options;
 
     const defaultResource = resource || 'Vai trò';
 
-    super({ resource: defaultResource, identity, message });
+    super({ resource: defaultResource, field, message });
 
     this.code = code;
   }

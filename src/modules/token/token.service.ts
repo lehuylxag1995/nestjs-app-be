@@ -86,7 +86,7 @@ export class TokenService {
       where: { userId },
     });
 
-    if (!tokens) throw new TokenNotFoundException({ identity: userId });
+    if (!tokens) throw new TokenNotFoundException({ field: userId });
 
     for (const token of tokens) {
       const preHashVerify = this.sha256(refreshTokenHash);
@@ -101,7 +101,7 @@ export class TokenService {
       where: { id },
     });
 
-    if (!data) throw new TokenNotFoundException({ identity: id });
+    if (!data) throw new TokenNotFoundException({ field: id });
 
     return data;
   }

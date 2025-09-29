@@ -2,9 +2,9 @@ import { PrismaService } from '@Modules/prisma/prisma.service';
 import { CreateUserSocialDto } from '@Modules/user-provider/dto/create-user-social.dto';
 import { UpdatePartialUserSocialDto } from '@Modules/user-provider/dto/update-partial-user-social.dto';
 import { UpdateUserSocialDto } from '@Modules/user-provider/dto/update-user-social.dto';
+import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-social-badrequest.exception';
 import { UserSocialConflictException } from '@Modules/user-provider/exceptions/user-social-conflict.exception';
 import { UserSocialNotFoundException } from '@Modules/user-provider/exceptions/user-social-notfound.exception';
-import { UserSocialBadRequestException } from '@Modules/user-provider/exceptions/user-sociala.exception';
 import { Injectable } from '@nestjs/common';
 import { Prisma, SocialType } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -88,7 +88,7 @@ export class UserSocialService {
       },
     });
 
-    if (!result) throw new UserSocialNotFoundException({ identity: id });
+    if (!result) throw new UserSocialNotFoundException({ field: id });
 
     return result;
   }

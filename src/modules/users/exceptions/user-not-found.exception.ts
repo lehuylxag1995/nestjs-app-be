@@ -1,19 +1,18 @@
 import { BaseNotFoundException } from '@Exceptions/not-found.exception';
-import { IBaseNotFoundException } from '@Interfaces/base-exceptions.interface';
-interface IUserNotFoundException extends IBaseNotFoundException {
-  code?: string;
-}
+import { IBaseSpecialException } from '@Interfaces/base-exceptions.interface';
+
+interface IUserNotFoundException extends IBaseSpecialException {}
 
 // Exception cụ thể quản lý resource
 export class UserNotFoundException extends BaseNotFoundException {
   public readonly code: string | undefined;
 
   constructor(options: IUserNotFoundException = {}) {
-    const { identity, message, resource, code } = options;
+    const { field, message, resource, code } = options;
 
     const defaultResource = resource || 'Người dùng';
 
-    super({ resource: defaultResource, identity, message });
+    super({ resource: defaultResource, field, message });
 
     this.code = code;
   }
