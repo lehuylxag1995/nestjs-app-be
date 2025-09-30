@@ -11,35 +11,38 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PermissionService } from './permission.service';
 
-@Controller('permission')
+@Controller('permissions')
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Post()
-  create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionService.create(createPermissionDto);
+  async create(@Body() createPermissionDto: CreatePermissionDto) {
+    return await this.permissionService.createPermission(createPermissionDto);
   }
 
   @Get()
-  findAll() {
-    return this.permissionService.findAll();
+  async findAll() {
+    return await this.permissionService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.permissionService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    return await this.permissionService.findOne(id);
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updatePermissionDto: UpdatePermissionDto,
   ) {
-    return this.permissionService.update(+id, updatePermissionDto);
+    return await this.permissionService.updatePermission(
+      id,
+      updatePermissionDto,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.permissionService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.permissionService.removePermission(id);
   }
 }
