@@ -1,8 +1,8 @@
-import { OtpPurposeEnum } from '@Enums/otp-purpose-type.enum';
 import { ChangePasswordDto } from '@Modules/auth/dto/change-password';
 import { RefresTokenDto } from '@Modules/auth/dto/refresh-token';
 import { ResetPasswordDto } from '@Modules/auth/dto/reset-password';
 import { MailService } from '@Modules/mail/mail.service';
+import { CreateOtpDto } from '@Modules/otp/dto/create-otp.dto';
 import { OtpService } from '@Modules/otp/otp.service';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { RolesService } from '@Modules/roles/roles.service';
@@ -21,7 +21,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
-import { SocialType } from '@prisma/client';
+import { PurposeType, SocialType } from '@prisma/client';
 import { JwtPayloadUser } from '@Types/jwt-payload.type';
 import { UserFacebookResponse } from '@Types/user-facebook-response.type';
 import { UserGoogleRespone } from '@Types/user-google-response.type';
@@ -93,10 +93,11 @@ export class AuthService {
       if (!user) throw new BadRequestException('Email Không tồn tại !');
 
       // Tạo Otp
-      const otp = await this.otpService.createOtp(
-        user.id,
-        OtpPurposeEnum.EMAIL_VERIFY,
-      );
+      const reqDataOtp: CreateOtpDto = {
+        userId: user.id,
+        purpose: PurposeType.EMAIL_VERIFY,
+      };
+      const otp = await this.otpService.createOtp(reqDataOtp);
 
       // Gửi mail xác thực
       // const result = await this.mailService.sendConfirmEmailRegister(
@@ -122,10 +123,11 @@ export class AuthService {
         throw new BadRequestException('Đăng ký tài khoản bị lỗi !');
 
       // Tạo OTP: Email Verify cho User
-      const otp = await this.otpService.createOtp(
-        user.id,
-        OtpPurposeEnum.EMAIL_VERIFY,
-      );
+      const reqDataOtp: CreateOtpDto = {
+        userId: user.id,
+        purpose: PurposeType.EMAIL_VERIFY,
+      };
+      const otp = await this.otpService.createOtp(reqDataOtp);
 
       // Gửi mail xác thực
       // await this.mailService.sendConfirmEmailRegister(
@@ -149,7 +151,7 @@ export class AuthService {
       const otpDb = await this.otpService.verifyOtp(
         userId,
         otp,
-        OtpPurposeEnum.EMAIL_VERIFY,
+        PurposeType.EMAIL_VERIFY,
       );
       if (!otpDb) throw new BadRequestException('OTP không chính xác !');
 
@@ -164,7 +166,7 @@ export class AuthService {
         // Xóa otp đã xác thực
         await this.otpService.deleteAllOtp(
           userId,
-          OtpPurposeEnum.EMAIL_VERIFY,
+          PurposeType.EMAIL_VERIFY,
           prisma,
         );
 
@@ -270,10 +272,11 @@ export class AuthService {
       }
 
       // Tạo OTP reset password và Lưu token vào DB
-      const otp = await this.otpService.createOtp(
-        user.id,
-        OtpPurposeEnum.RESET_PASSWORD,
-      );
+      const reqDataOtp: CreateOtpDto = {
+        userId: user.id,
+        purpose: PurposeType.RESET_PASSWORD,
+      };
+      const otp = await this.otpService.createOtp(reqDataOtp);
 
       // Gửi mail để xác nhận qua trang cập nhật mật khẩu mới
       // const sendMail = await this.mailService.sendResetPassword(
@@ -304,7 +307,7 @@ export class AuthService {
       const otpDb = await this.otpService.verifyOtp(
         userId,
         otp,
-        OtpPurposeEnum.RESET_PASSWORD,
+        PurposeType.RESET_PASSWORD,
       );
       if (!otpDb) throw new BadRequestException('OTP không chính xác !');
 
@@ -321,7 +324,7 @@ export class AuthService {
         // Xóa tất cả OTP của user
         await this.otpService.deleteAllOtp(
           otpDb.userId,
-          OtpPurposeEnum.RESET_PASSWORD,
+          PurposeType.RESET_PASSWORD,
           prisma,
         );
 
