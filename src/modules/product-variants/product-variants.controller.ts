@@ -14,45 +14,43 @@ import { CreateProductVariantDto } from './dto/create-product-variant.dto';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto';
 import { ProductVariantsService } from './product-variants.service';
 
-@Controller('product')
+@Controller('product-variant')
 export class ProductVariantsController {
   constructor(
     private readonly productVariantsService: ProductVariantsService,
   ) {}
 
-  @Post(':productId/variant')
+  @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Body() createProductVariantDto: CreateProductVariantDto,
-  ) {
-    return await this.productVariantsService.create(
-      productId,
+  async create(@Body() createProductVariantDto: CreateProductVariantDto) {
+    return await this.productVariantsService.createProductVariant(
       createProductVariantDto,
     );
   }
 
-  @Get('/variant/:id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.productVariantsService.findOne(id);
+  @Get(':id')
+  async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return await this.productVariantsService.findOneProductVariant(id);
   }
 
-  @Patch(':productId/variant/:id')
+  @Get()
+  async findAll() {
+    return await this.productVariantsService.findAllProductVariant();
+  }
+
+  @Patch(':id')
   async update(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateProductVariantDto: UpdateProductVariantDto,
   ) {
-    return await this.productVariantsService.update(
-      productId,
+    return await this.productVariantsService.updateProductVariant(
       id,
       updateProductVariantDto,
     );
   }
 
-  @Delete('/variant/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    return await this.productVariantsService.remove(id);
+  @Delete(':id')
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return await this.productVariantsService.removeProductVariant(id);
   }
 }

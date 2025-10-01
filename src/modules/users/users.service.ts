@@ -21,10 +21,18 @@ export class UsersService {
     private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto) {
+  async createUser(
+    createUserDto: CreateUserDto,
+    tx?: Prisma.TransactionClient,
+  ) {
     try {
+      const prisma = tx ?? this.prismaService;
+
       // Tìm role mặc định là customer cho tài khoản
-      const roleCustomer = await this.roleService.findRoleByName('CUSTOMER');
+      const roleCustomer = await this.roleService.findRoleByName(
+        'CUSTOMER',
+        prisma,
+      );
       createUserDto.roleId = roleCustomer.id;
 
       // Tạo mật khẩu cho tài khoản
@@ -33,7 +41,7 @@ export class UsersService {
       createUserDto.password = hash;
 
       // Tạo tài khoản
-      return await this.prismaService.user.create({
+      return await prisma.user.create({
         data: createUserDto,
         omit: {
           username: true,
@@ -75,6 +83,7 @@ export class UsersService {
 
   async findAll(paginationUserDto: PaginationUserDto, user: JwtPayloadUser) {
     const { page, pageSize, keyword } = paginationUserDto;
+
     const searchWhere: Prisma.UserWhereInput = keyword
       ? {
           OR: [
@@ -122,8 +131,10 @@ export class UsersService {
     return user;
   }
 
-  async findUserByUsername(username: string) {
-    const user = await this.prismaService.user.findUnique({
+  async findUserByUsername(username: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
+
+    const user = await prisma.user.findUnique({
       where: { username },
       select: {
         id: true,
@@ -139,12 +150,18 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    tx?: Prisma.TransactionClient,
+  ) {
     try {
-      await this.findOne(id);
+      const prisma = tx || this.prismaService;
 
-      return await this.prismaService.user.update({
-        where: { id },
+      const user = await this.findOne(id, prisma);
+
+      return await prisma.user.update({
+        where: { id: user.id },
         data: updateUserDto,
         omit: {
           createdAt: true,
@@ -162,9 +179,15 @@ export class UsersService {
     }
   }
 
-  async updatePartial(id: string, updateUserDto: UpdateUserPartialDto) {
+  async updatePartial(
+    id: string,
+    updateUserDto: UpdateUserPartialDto,
+    tx?: Prisma.TransactionClient,
+  ) {
     try {
-      return await this.prismaService.user.update({
+      const prisma = tx || this.prismaService;
+
+      return await prisma.user.update({
         where: { id },
         data: updateUserDto,
       });
@@ -179,23 +202,29 @@ export class UsersService {
     }
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-    return await this.prismaService.user.delete({
-      where: { id },
-      omit: {
-        createdAt: true,
-        updatedAt: true,
-        isActive: true,
-        roleId: true,
-        password: true,
-      },
-    });
+      const user = await this.findOne(id, prisma);
+
+      return await prisma.user.delete({
+        where: { id: user.id },
+        omit: {
+          createdAt: true,
+          updatedAt: true,
+          isActive: true,
+          roleId: true,
+          password: true,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   async updateEmailVerify(id: string, tx?: Prisma.TransactionClient) {
-    const prisma = tx ?? this.prismaService;
+    const prisma = tx || this.prismaService;
 
     const user = await this.findOne(id, prisma);
 

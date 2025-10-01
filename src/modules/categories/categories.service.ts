@@ -1,5 +1,4 @@
 import { PaginationCategoryDto } from '@Modules/categories/dto/pagination-category.dto';
-import { CategoryBadRequestException } from '@Modules/categories/exceptions/category-badrequest.exception';
 import { CategoryConflictException } from '@Modules/categories/exceptions/category-conflict.exception';
 import { CategoryNotFoundException } from '@Modules/categories/exceptions/category-notfound.exception';
 import { PrismaService } from '@Modules/prisma/prisma.service';
@@ -24,7 +23,8 @@ export class CategoriesService {
           throw new CategoryConflictException({
             field: error.meta?.target as string,
           });
-      } else throw error;
+      }
+      throw error;
     }
   }
 
@@ -74,44 +74,24 @@ export class CategoriesService {
     updateCategoryDto: UpdateCategoryDto,
     tx?: Prisma.TransactionClient,
   ) {
-    const prisma = tx || this.prismaService;
+    try {
+      const prisma = tx || this.prismaService;
 
-    // 1./ Check Id có tồn tại không ?
-    const category = await this.findOne(id);
+      const category = await this.findOne(id, prisma);
 
-    // 2./ Check parentId có tồn tại không ?
-    if (updateCategoryDto.parentId) {
-      const parentCategory = await this.findOne(
-        updateCategoryDto.parentId,
-        prisma,
-      );
-
-      if (!parentCategory) {
-        throw new CategoryNotFoundException({
-          field: updateCategoryDto.parentId,
-        });
+      return await prisma.category.update({
+        where: { id: category.id },
+        data: updateCategoryDto,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new CategoryConflictException({
+            field: error.meta?.target as string,
+          });
       }
+      throw error;
     }
-
-    // 3./ Check không trùng tên danh mục
-    if (updateCategoryDto.name) {
-      const category = await prisma.category.findUnique({
-        where: { name: updateCategoryDto.name },
-      });
-      if (category && category.id !== id)
-        throw new CategoryNotFoundException({ field: updateCategoryDto.name });
-    }
-
-    // 4./ Check parentId không được là chính nó
-    if (updateCategoryDto.parentId && updateCategoryDto.parentId === id)
-      throw new CategoryBadRequestException({
-        message: 'Danh mục không thể là cha của chính nó',
-      });
-
-    return await prisma.category.update({
-      where: { id: category.id },
-      data: updateCategoryDto,
-    });
   }
 
   async removeCategory(id: string, tx?: Prisma.TransactionClient) {

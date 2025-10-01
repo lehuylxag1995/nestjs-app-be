@@ -1,5 +1,9 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { ProductConflictException } from '@Modules/products/exceptions/product-conflict.exception';
+import { ProductNotFoundException } from '@Modules/products/exceptions/product-notfound.exception';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -7,57 +11,83 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prismaService: PrismaService) {}
 
-  async checkNameUnique(name: string) {
-    const result = await this.prismaService.product.findUnique({
-      where: { name },
-    });
+  async createProduct(
+    createProductDto: CreateProductDto,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      const prisma = tx || this.prismaService;
 
-    if (!result) return false;
-
-    return true;
+      return await prisma.product.create({
+        data: createProductDto,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new ProductConflictException({
+            field: error.meta?.target as string,
+          });
+      }
+      throw error;
+    }
   }
 
-  async create(createProductDto: CreateProductDto) {
-    //Check trùng tên sản phẩm
-    const checkName = await this.checkNameUnique(createProductDto.name);
-    if (checkName) throw new BadRequestException('Tên sản phẩm đã tồn tại');
-
-    return await this.prismaService.product.create({
-      data: createProductDto,
-    });
+  async findAllProduct(tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
+    return await prisma.product.findMany();
   }
 
-  async findAll() {
-    return await this.prismaService.product.findMany();
-  }
+  async findOneProduct(id: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
 
-  async findOne(id: string) {
-    const result = await this.prismaService.product.findUnique({
+    const result = await prisma.product.findUnique({
       where: { id },
     });
 
-    if (!result)
-      throw new BadRequestException('Không tìm thấy sản phẩm theo ID');
+    if (!result) throw new ProductNotFoundException({ field: id });
     return result;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
-    await this.findOne(id);
+  async updateProduct(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      const prisma = tx || this.prismaService;
 
-    if (updateProductDto.name) {
-      const result = await this.checkNameUnique(updateProductDto.name);
-      if (result) throw new BadRequestException('Tên sản phẩm đã tồn tại !');
+      const product = await this.findOneProduct(id, prisma);
+
+      return await prisma.product.update({
+        where: { id: product.id },
+        data: updateProductDto,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new ProductConflictException({
+            field: error.meta?.target as string,
+          });
+      }
+      throw error;
     }
-
-    return await this.prismaService.product.update({
-      where: { id },
-      data: updateProductDto,
-    });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async removeProduct(id: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-    return await this.prismaService.product.delete({ where: { id } });
+      const product = await this.findOneProduct(id, prisma);
+
+      return await prisma.product.delete({ where: { id: product.id } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2003')
+          throw new ProductConflictException({
+            message: 'Sản phẩm có liên kết khóa ngoại !',
+          });
+      }
+      throw error;
+    }
   }
 }

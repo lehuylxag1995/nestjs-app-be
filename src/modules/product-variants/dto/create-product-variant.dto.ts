@@ -4,9 +4,14 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateProductVariantDto {
+  @IsUUID('4')
+  @IsNotEmpty({ message: 'Bạn chưa nhập productId' })
+  productId: string;
+
   @IsString({ message: 'mã định danh (sku) phải là dạng chuỗi' })
   @IsNotEmpty({ message: 'Bạn chưa tạo mã định danh (sku)' })
   sku: string;
