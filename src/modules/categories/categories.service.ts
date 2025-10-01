@@ -1,32 +1,36 @@
 import { PaginationCategoryDto } from '@Modules/categories/dto/pagination-category.dto';
+import { CategoryBadRequestException } from '@Modules/categories/exceptions/category-badrequest.exception';
+import { CategoryConflictException } from '@Modules/categories/exceptions/category-conflict.exception';
+import { CategoryNotFoundException } from '@Modules/categories/exceptions/category-notfound.exception';
 import { PrismaService } from '@Modules/prisma/prisma.service';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Category, Prisma } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  async isCategoryNameAvailable(name: string) {
-    const category = await this.prisma.category.findUnique({ where: { name } });
-    return !category; // true = available, false = duplicate
+  async createCategory(data: CreateCategoryDto, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
+
+      return await prisma.category.create({ data });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new CategoryConflictException({
+            field: error.meta?.target as string,
+          });
+      } else throw error;
+    }
   }
 
-  async create(req: CreateCategoryDto): Promise<Category> {
-    const isAvailable = await this.isCategoryNameAvailable(req.name);
+  async findAll(req: PaginationCategoryDto, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
 
-    if (!isAvailable) throw new BadRequestException('Tên danh mục đã tồn tại');
-
-    return await this.prisma.category.create({ data: req });
-  }
-
-  async findAll(req: PaginationCategoryDto) {
     const { page, pageSize, keyword } = req;
 
     const where: Prisma.CategoryWhereInput = keyword
@@ -35,15 +39,14 @@ export class CategoriesService {
         }
       : {};
 
-    const [data, totalItems] = await this.prisma.$transaction([
-      this.prisma.category.findMany({
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        where,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.category.count({ where }),
-    ]);
+    const data = await prisma.category.findMany({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalItems = await prisma.category.count({ where });
 
     return {
       data,
@@ -56,65 +59,75 @@ export class CategoriesService {
     };
   }
 
-  async findOne(id: string): Promise<Category> {
-    const data = await this.prisma.category.findUnique({ where: { id } });
+  async findOne(id: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
 
-    if (!data) throw new NotFoundException('Không tìm thấy danh mục');
+    const data = await prisma.category.findUnique({ where: { id } });
+
+    if (!data) throw new CategoryNotFoundException({ field: id });
 
     return data;
   }
 
-  async update(
+  async updateCategory(
     id: string,
     updateCategoryDto: UpdateCategoryDto,
-  ): Promise<Category> {
+    tx?: Prisma.TransactionClient,
+  ) {
+    const prisma = tx || this.prismaService;
+
     // 1./ Check Id có tồn tại không ?
-    await this.findOne(id);
+    const category = await this.findOne(id);
 
     // 2./ Check parentId có tồn tại không ?
     if (updateCategoryDto.parentId) {
-      const parentCategory = await this.prisma.category.findUnique({
-        where: { id: updateCategoryDto.parentId },
-      });
+      const parentCategory = await this.findOne(
+        updateCategoryDto.parentId,
+        prisma,
+      );
 
       if (!parentCategory) {
-        throw new BadRequestException('Danh mục cha không tồn tại');
+        throw new CategoryNotFoundException({
+          field: updateCategoryDto.parentId,
+        });
       }
     }
 
     // 3./ Check không trùng tên danh mục
     if (updateCategoryDto.name) {
-      const category = await this.prisma.category.findUnique({
+      const category = await prisma.category.findUnique({
         where: { name: updateCategoryDto.name },
       });
       if (category && category.id !== id)
-        throw new BadRequestException('Tên danh mục đã tồn tại');
+        throw new CategoryNotFoundException({ field: updateCategoryDto.name });
     }
 
     // 4./ Check parentId không được là chính nó
     if (updateCategoryDto.parentId && updateCategoryDto.parentId === id)
-      throw new BadRequestException('Danh mục không thể là cha của chính nó');
+      throw new CategoryBadRequestException({
+        message: 'Danh mục không thể là cha của chính nó',
+      });
 
-    return await this.prisma.category.update({
-      where: { id },
+    return await prisma.category.update({
+      where: { id: category.id },
       data: updateCategoryDto,
     });
   }
 
-  async remove(id: string): Promise<Category> {
-    await this.findOne(id);
+  async removeCategory(id: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-    return await this.prisma.category.delete({ where: { id } });
-  }
+      const category = await this.findOne(id, prisma);
 
-  async changePublished(id: string, published: boolean): Promise<Category> {
-    await this.findOne(id);
-
-    return await this.prisma.category.update({
-      where: { id },
-      data: {
-        published,
-      },
-    });
+      return await prisma.category.delete({ where: { id: category.id } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2003')
+          throw new CategoryConflictException({
+            message: 'Xung đột khóa ngoại bảng category',
+          });
+      } else throw error;
+    }
   }
 }

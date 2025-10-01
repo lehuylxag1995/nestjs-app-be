@@ -7,7 +7,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseBoolPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -24,7 +23,7 @@ export class CategoriesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createCategoryDto: CreateCategoryDto) {
-    return await this.categoriesService.create(createCategoryDto);
+    return await this.categoriesService.createCategory(createCategoryDto);
   }
 
   @Get()
@@ -42,19 +41,11 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return await this.categoriesService.update(id, updateCategoryDto);
+    return await this.categoriesService.updateCategory(id, updateCategoryDto);
   }
 
   @Delete(':id')
   async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.categoriesService.remove(id);
-  }
-
-  @Patch(':id/publish')
-  async changePublishedState(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body('published', ParseBoolPipe) published: boolean,
-  ) {
-    return await this.categoriesService.changePublished(id, published);
+    return await this.categoriesService.removeCategory(id);
   }
 }
