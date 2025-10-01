@@ -1,73 +1,49 @@
-import { Controller } from '@nestjs/common';
+import { CreateOrderDto } from '@Modules/orders/dto/create-order.dto';
+import { UpdateOrderDto } from '@Modules/orders/dto/update-order.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // @Post()
-  // @HttpCode(HttpStatus.CREATED)
-  // async create(@Body() createOrderDto: CreateOrderDto) {
-  //   return await this.ordersService.createOrder(
-  //     createOrderDto.userId,
-  //     createOrderDto.items,
-  //   );
-  // }
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() data: CreateOrderDto) {
+    return await this.ordersService.createOrder(data);
+  }
 
-  // @Post(':orderId/item')
-  // async addOrderItem(
-  //   @Param('orderId') orderId: string,
-  //   @Body() dto: CreateOrderItemDto,
-  // ) {
-  //   return await this.ordersService.createItemToExistingOrder(orderId, dto);
-  // }
+  @Delete(':id')
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return await this.ordersService.deleteOrder(id);
+  }
 
-  // @Patch(':orderId/item/:orderItemId')
-  // async editOrderItem(
-  //   @Param('orderId', ParseUUIDPipe) orderId: string,
-  //   @Param('orderItemId', ParseUUIDPipe) orderItemId: string,
-  //   @Body() dto: UpdateOrderItemDto,
-  // ) {
-  //   return await this.ordersService.editItemToExistingOrder(
-  //     orderId,
-  //     orderItemId,
-  //     dto,
-  //   );
-  // }
+  @Get()
+  async findAll() {
+    return await this.ordersService.findAllOrder();
+  }
 
-  // @Delete(':id')
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async remove(@Param('id', ParseUUIDPipe) id: string) {
-  //   return await this.ordersService.remove(id);
-  // }
+  @Get(':id')
+  async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return await this.ordersService.findOneOrder(id);
+  }
 
-  // @Delete(':orderId/item/:orderItemId')
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async removeItem(
-  //   @Param('orderId', ParseUUIDPipe) orderId: string,
-  //   @Param('orderItemId', ParseUUIDPipe) orderItemId: string,
-  // ) {
-  //   return await this.ordersService.removeItemToExistingOrder(
-  //     orderId,
-  //     orderItemId,
-  //   );
-  // }
-
-  // @Get()
-  // async findAll() {
-  //   return await this.ordersService.findAll();
-  // }
-
-  // @Get(':id')
-  // async findOne(@Param('id', ParseUUIDPipe) id: string) {
-  //   return await this.ordersService.findOne(id);
-  // }
-
-  // @Patch(':id/status')
-  // async changeStatus(
-  //   @Param('id', ParseUUIDPipe) id: string,
-  //   @Body() dto: UpdateOrderDto,
-  // ) {
-  //   return await this.ordersService.changeStatusOrderById(id, dto);
-  // }
+  @Patch(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() data: UpdateOrderDto,
+  ) {
+    return await this.ordersService.updateOrder(id, data);
+  }
 }

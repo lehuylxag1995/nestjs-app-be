@@ -20,7 +20,7 @@ export async function createPurcharOrder() {
     //Lấy danh sách products và variants
     const listProductAndVariants = await prisma.product.findMany({
       include: {
-        Variants: true,
+        ProductVariants: true,
       },
     });
 
@@ -56,10 +56,13 @@ export async function createPurcharOrder() {
       chosenProductIds.add(product.id);
 
       //Lấy ngẫu nhiên các biến thể thuộc sản phẩm
-      const randomVariants = fakerVI.helpers.arrayElements(product.Variants, {
-        min: 1,
-        max: product.Variants.length,
-      });
+      const randomVariants = fakerVI.helpers.arrayElements(
+        product.ProductVariants,
+        {
+          min: 1,
+          max: product.ProductVariants.length,
+        },
+      );
       for (const variant of randomVariants) {
         // bỏ qua nếu đã chọn variant này trong đơn hàng
         if (chosenVariantIds.has(variant.id)) continue;

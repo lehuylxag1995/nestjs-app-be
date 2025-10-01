@@ -1,4 +1,5 @@
 import { PrismaService } from '@Modules/prisma/prisma.service';
+import { ProductVariantBadRequestException } from '@Modules/product-variants/exceptions/productVariant-badrequest.exception';
 import { ProductVariantConflictException } from '@Modules/product-variants/exceptions/productVariant-conflict.exception';
 import { ProductVariantNotFoundException } from '@Modules/product-variants/exceptions/productVariant-notfound.exception';
 import { Injectable } from '@nestjs/common';
@@ -27,6 +28,11 @@ export class ProductVariantsService {
           throw new ProductVariantConflictException({
             field: error.meta?.target as string,
           });
+        else if (error.code === 'P2003') {
+          throw new ProductVariantBadRequestException({
+            message: `Liên kết ràng buộc: productId chưa được tạo !`,
+          });
+        }
       }
       throw error;
     }

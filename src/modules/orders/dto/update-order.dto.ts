@@ -1,7 +1,4 @@
-import { OrderStatus } from '@Modules/orders/enum/OrderStatus.enum';
-import { IsEnum } from 'class-validator';
+import { CreateOrderDto } from '@Modules/orders/dto/create-order.dto';
+import { PartialType } from '@nestjs/mapped-types';
 
-export class UpdateOrderDto {
-  @IsEnum(OrderStatus, { message: 'Trạng thái đơn hàng không đúng !' })
-  status: OrderStatus;
-}
+export class UpdateOrderDto extends PartialType(CreateOrderDto) {}

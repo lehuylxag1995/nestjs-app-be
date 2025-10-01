@@ -13,7 +13,7 @@ model Product {
 
     OrderItems            OrderItem[]
     Inventories           Inventory[]
-    Variants              ProductVariant[]
+    ProductVariants       ProductVariant[]
     InventoryTransactions InventoryTransaction[]
     Images                Image[]
     Snapshots             Snapshot[]
@@ -43,7 +43,7 @@ model ProductVariant {
     updatedAt DateTime  @updatedAt
 
     //Biến thể thuộc duy nhất 1 sản phẩm, nên khi xóa sản phẩm thì biến thể phụ thuộc sẽ bị xóa theo
-    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+    Product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
     InventoryTransactions InventoryTransaction[]
     Inventories           Inventory?

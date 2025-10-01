@@ -1,217 +1,90 @@
+import { CreateOrderDto } from '@Modules/orders/dto/create-order.dto';
+import { UpdateOrderDto } from '@Modules/orders/dto/update-order.dto';
+import { OrderBadRequestException } from '@Modules/orders/exceptions/order-badrequest.exception';
+import { OrderConflictException } from '@Modules/orders/exceptions/order-conflict.exception';
+import { OrderNotFoundException } from '@Modules/orders/exceptions/order-notfound.exception';
 import { PrismaService } from '@Modules/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class OrdersService {
   constructor(private prismaService: PrismaService) {}
 
-  // //Tạo mới đơn hàng và chi tiết đơn hàng
-  // async createOrder(userId: string, items: CreateOrderItemDto[]) {
-  //   return this.prismaService.$transaction(async (prisma) => {
-  //     //1. Tạo đơn hàng
-  //     const order = await prisma.order.create({
-  //       data: {
-  //         userId,
-  //         total: 0,
-  //       },
-  //     });
+  async createOrder(data: CreateOrderDto, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-  //     //2. Thêm chi tiết đơn hàng
-  //     let totalBill = 0;
-  //     const data: Prisma.OrderItemCreateManyInput[] = items.map((item) => {
-  //       const total = item.price * item.quantity;
-  //       totalBill += total;
-  //       return {
-  //         orderId: order.id,
-  //         price: item.price,
-  //         quantity: item.quantity,
-  //         total,
-  //         productId: item.productId,
-  //       };
-  //     });
-  //     await prisma.orderItem.createMany({ data });
+      return await prisma.order.create({
+        data,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new OrderConflictException({
+            field: error.meta?.target as string,
+          });
+        else if (error.code === 'P2003')
+          throw new OrderBadRequestException({
+            message: `Liên kết ràng buộc: userId không tồn tại !`,
+          });
+      }
+      throw error;
+    }
+  }
 
-  //     //3.Cập nhật lại bill
-  //     await this.updateOrderTotal(prisma, order.id);
+  async findOneOrder(id: string, tx?: Prisma.TransactionClient) {
+    const prisma = tx || this.prismaService;
+    const data = await prisma.order.findUnique({ where: { id } });
+    if (!data) throw new OrderNotFoundException({ field: id });
+    return data;
+  }
 
-  //     //4. Trả về bill
-  //     return await this.findOrderById(prisma, order.id);
-  //   });
-  // }
+  async updateOrder(
+    id: string,
+    data: UpdateOrderDto,
+    tx?: Prisma.TransactionClient,
+  ) {
+    try {
+      const prisma = tx || this.prismaService;
 
-  // //Tạo chi tiết đơn hàng
-  // async createItemToExistingOrder(orderId: string, dto: CreateOrderItemDto) {
-  //   return this.prismaService.$transaction(async (prisma) => {
-  //     //1. Thêm chi tiết đơn hàng
-  //     await prisma.orderItem.create({
-  //       data: {
-  //         orderId,
-  //         productId: dto.productId,
-  //         price: dto.price,
-  //         quantity: dto.quantity,
-  //         total: dto.price * dto.quantity,
-  //       },
-  //     });
+      const order = await this.findOneOrder(id, prisma);
 
-  //     //2.Cập nhật lại bill
-  //     await this.updateOrderTotal(prisma, orderId);
+      return await prisma.order.update({
+        where: { id: order.id },
+        data,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002')
+          throw new OrderConflictException({
+            field: error.meta?.target as string,
+          });
+      }
+      throw error;
+    }
+  }
 
-  //     //3. Trả về bill
-  //     return await this.findOrderById(prisma, orderId);
-  //   });
-  // }
+  async deleteOrder(id: string, tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-  // //Sửa chi tiết đơn hàng
-  // async editItemToExistingOrder(
-  //   orderId: string,
-  //   itemId: string,
-  //   dto: UpdateOrderItemDto,
-  // ) {
-  //   return this.prismaService.$transaction(async (prisma) => {
-  //     //Validation dto
-  //     if (dto.price === undefined || dto.quantity === undefined)
-  //       throw new BadRequestException(
-  //         'Bạn chưa nhập giá và số lượng sản phẩm ',
-  //       );
+      const order = await this.findOneOrder(id, prisma);
 
-  //     //Cập nhật lại chi tiết đơn hàng
-  //     await prisma.orderItem.update({
-  //       where: { id: itemId },
-  //       data: {
-  //         orderId,
-  //         price: dto.price,
-  //         quantity: dto.quantity,
-  //         total: dto.price * dto.quantity,
-  //       },
-  //     });
+      return await prisma.order.delete({ where: { id: order.id } });
+    } catch (error) {
+      throw error;
+    }
+  }
 
-  //     //Cập nhật lại tổng bill
-  //     await this.updateOrderTotal(prisma, orderId);
+  async findAllOrder(tx?: Prisma.TransactionClient) {
+    try {
+      const prisma = tx || this.prismaService;
 
-  //     //Trả về thông tin bill
-  //     return await this.findOrderById(prisma, orderId);
-  //   });
-  // }
-
-  // //Xóa đơn hàng
-  // async remove(id: string) {
-  //   await this.findOne(id);
-
-  //   await this.prismaService.order.delete({ where: { id } });
-  // }
-
-  // //Xóa chi tiết đơn hàng
-  // async removeItemToExistingOrder(orderId: string, itemId: string) {
-  //   return this.prismaService.$transaction(async (prisma) => {
-  //     //Kiểm tra tồn tại của chi tiết đơn hàng
-  //     const isOrderItemExist = await prisma.orderItem.findUnique({
-  //       where: {
-  //         id: itemId,
-  //         orderId,
-  //       },
-  //     });
-  //     if (!isOrderItemExist)
-  //       throw new BadRequestException('Không tìm thấy chi tiết đơn hàng !');
-
-  //     //Xóa chi tiết đơn hàng
-  //     await prisma.orderItem.delete({
-  //       where: {
-  //         id: itemId,
-  //       },
-  //     });
-
-  //     //Cập nhật lại tổng bill
-  //     await this.updateOrderTotal(prisma, orderId);
-  //   });
-  // }
-
-  // //Tất cả đơn hàng và chi tiết đơn hàng
-  // async findAll() {
-  //   return await this.prismaService.order.findMany({
-  //     include: { items: true },
-  //   });
-  // }
-
-  // //Tìm kiếm đơn hàng và chi tiết đơn hàng
-  // async findOne(id: string) {
-  //   const data = await this.prismaService.order.findUnique({
-  //     where: { id },
-  //     include: {
-  //       items: true,
-  //     },
-  //   });
-
-  //   if (!data) throw new BadRequestException('Không tìm thấy đơn hàng theo Id');
-  //   return data;
-  // }
-
-  // private async updateOrderTotal(
-  //   prisma: Prisma.TransactionClient,
-  //   orderId: string,
-  // ) {
-  //   const total = await prisma.orderItem.aggregate({
-  //     where: { orderId },
-  //     _sum: {
-  //       total: true,
-  //     },
-  //   });
-
-  //   await prisma.order.update({
-  //     where: { id: orderId },
-  //     data: { total: total._sum.total || 0 },
-  //   });
-  // }
-
-  // private async findOrderById(prisma: Prisma.TransactionClient, id: string) {
-  //   return await prisma.order.findUnique({
-  //     where: { id },
-  //     include: {
-  //       items: {
-  //         select: {
-  //           quantity: true,
-  //           price: true,
-  //           total: true,
-  //           product: {
-  //             select: {
-  //               name: true,
-  //             },
-  //           },
-  //         },
-  //       },
-  //       user: {
-  //         select: {
-  //           name: true,
-  //           address: true,
-  //           phone: true,
-  //         },
-  //       },
-  //     },
-  //     omit: {
-  //       updatedAt: true,
-  //     },
-  //   });
-  // }
-
-  // //Thay đổi trạng thái đơn hàng
-  // async changeStatusOrderById(id: string, dto: UpdateOrderDto) {
-  //   const order = await this.findOne(id);
-
-  //   //Luồng giao hàng
-  //   const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-  //     [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED], // Chờ shop online xác nhận, nếu chưa xác nhận khách hàng có thể hủy đơn
-  //     [OrderStatus.CONFIRMED]: [OrderStatus.SHIPPED], // Shop kiểm tra có hàng giao cho vận chuyển
-  //     [OrderStatus.SHIPPED]: [OrderStatus.RETURNED, OrderStatus.DELIVERED], // Tới tay khách hàng có thể hoàn trả hoặc nhận hàng luôn
-  //     [OrderStatus.CANCELLED]: [], // Giao hàng thất bại
-  //     [OrderStatus.DELIVERED]: [], // Giao hàng thành công
-  //     [OrderStatus.RETURNED]: [], // Shop nhận trả hàng
-  //   };
-
-  //   if (!validTransitions[order.status].includes(dto.status))
-  //     throw new BadRequestException('Trạng thái đơn hàng không hợp lệ');
-
-  //   return await this.prismaService.order.update({
-  //     where: { id },
-  //     data: { status: dto.status },
-  //   });
-  // }
+      return await prisma.order.findMany();
+    } catch (error) {
+      throw error;
+    }
+  }
 }

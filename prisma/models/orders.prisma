@@ -60,10 +60,10 @@ model OrderItem {
     id                   String   @id @default(uuid())
     orderId              String
     productId            String
-    variantId            String
+    variantId            String   @unique
     quantity             Int
-    listedPrice          Decimal  @db.Decimal(13, 3) //Giá niêm yết (giá bán gồm khuyến mãi)
-    totalListedPrice     Decimal  @db.Decimal(13, 3) //Thành tiền giá bán
+    listedPrice          Decimal  @default(0) @db.Decimal(13, 3) //Giá niêm yết (giá bán gồm khuyến mãi)
+    totalListedPrice     Decimal  @default(0) @db.Decimal(13, 3) //Thành tiền giá bán
     isProcessTransaction Boolean  @default(false) //Check đơn hàng mới nhất
     createdAt            DateTime @default(now())
     updatedAt            DateTime @updatedAt

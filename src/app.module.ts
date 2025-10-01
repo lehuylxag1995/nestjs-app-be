@@ -15,6 +15,7 @@ import { ImagesModule } from '@Modules/upload/images/images.module';
 import { UsersModule } from '@Modules/users/users.module';
 import { Module } from '@nestjs/common';
 import { UserSocialModule } from './modules/user-provider/user-social.module';
+import { OrderItemsModule } from './modules/order-items/order-items.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserSocialModule } from './modules/user-provider/user-social.module';
     OtpModule,
     ...AppConfigModule,
     UserSocialModule,
+    OrderItemsModule,
   ],
 })
 export class AppModule {}
