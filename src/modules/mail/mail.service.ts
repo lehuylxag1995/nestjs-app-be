@@ -1,5 +1,6 @@
+import { MailBadRequestException } from '@Modules/mail/exceptions/mail-badrequest.exception';
 import { MailerService } from '@nestjs-modules/mailer';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MailService {
@@ -20,7 +21,9 @@ export class MailService {
         : false;
 
       if (!isCheckSendMail)
-        throw new BadRequestException('Không gửi được mail để xác thực');
+        throw new MailBadRequestException({
+          message: 'Không gửi được mail để xác thực',
+        });
 
       return isCheckSendMail;
     } catch (error) {
@@ -49,7 +52,9 @@ export class MailService {
         : false;
 
       if (!isCheckSendMail)
-        throw new BadRequestException('Không gửi được mail để xác thực');
+        throw new MailBadRequestException({
+          message: 'Không gửi được mail để xác thực',
+        });
 
       return isCheckSendMail;
     } catch (error) {
